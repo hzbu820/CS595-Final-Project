@@ -1,0 +1,38 @@
+﻿# Node and general build artifacts
+node_modules/
+dist/
+build/
+coverage/
+.cache/
+.DS_Store
+Thumbs.db
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files
+.env
+.env.*
+backend/.env
+backend/.env.*
+smart-contracts/.env
+smart-contracts/.env.*
+frontend/.env
+frontend/.env.*
+
+# Hardhat
+smart-contracts/cache/
+smart-contracts/artifacts/
+smart-contracts/typechain/
+
+# Backend runtime data
+backend/storage/
+!backend/storage/.gitkeep
+
+# Frontend build
+frontend/node_modules/
+frontend/dist/
+
+# Local reference docs (keep local only)
+CS595 Project Proposal – Blockchains and their Applications.txt
+FrontEnd_Guide_and_Prompt.txt
