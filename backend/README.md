@@ -2,13 +2,6 @@
 
 This package exposes the /upload and /verify endpoints required by the front-end flows. It stores JSON event payloads on disk (or any pluggable storage provider) and returns deterministic hashes and pseudo-CIDs.
 
-## Quick Start
-1. cd backend
-2. 
-pm install
-3. Copy .env.example to .env and update values
-4. 
-pm run dev to start the watcher server on port 4000
 
 ## Folder Layout
 - src/server.ts – Express bootstrap and dependency wiring
