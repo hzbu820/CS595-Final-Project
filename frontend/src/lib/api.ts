@@ -30,11 +30,22 @@ export const uploadEventFile = async (params: {
   return toJson(res);
 };
 
-export const verifyEventFile = async (params: { file: File; expectedHash?: string }) => {
+export const verifyEventFile = async (params: {
+  file: File;
+  expectedHash?: string;
+  expectedSaltedHash?: string;
+  salt?: string;
+}) => {
   const form = new FormData();
   form.append('file', params.file);
   if (params.expectedHash) {
     form.append('expectedHash', params.expectedHash);
+  }
+  if (params.expectedSaltedHash) {
+    form.append('expectedSaltedHash', params.expectedSaltedHash);
+  }
+  if (params.salt) {
+    form.append('salt', params.salt);
   }
 
   const res = await fetch(`${BACKEND_URL}/events/verify`, {
@@ -49,6 +60,14 @@ export const fetchStoredEvent = async (batchId: string, cid: string) => {
   const res = await fetch(`${BACKEND_URL}/events/${batchId}/${cid}`);
   if (!res.ok) {
     throw new Error('Unable to download stored JSON');
+  }
+  return res.json();
+};
+
+export const fetchEventMetadata = async (batchId: string, cid: string) => {
+  const res = await fetch(`${BACKEND_URL}/events/${batchId}/${cid}/meta`);
+  if (!res.ok) {
+    throw new Error('Unable to download metadata');
   }
   return res.json();
 };

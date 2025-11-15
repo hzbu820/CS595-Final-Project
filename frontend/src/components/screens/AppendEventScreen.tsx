@@ -2,6 +2,17 @@
 import { uploadEventFile } from '../../lib/api';
 import { useWallet } from '../../context/walletContext';
 
+type UploadResponse = {
+  batchId: string;
+  cid: string;
+  sha256: string;
+  saltedHash: string;
+  salt: string;
+  uri: string;
+  metadataUri: string;
+  size: number;
+};
+
 const EVENT_OPTIONS = ['STORAGE', 'TRANSPORT', 'INSPECTION', 'RETAIL', 'SALE'];
 
 export const AppendEventScreen = () => {
@@ -10,7 +21,7 @@ export const AppendEventScreen = () => {
   const [eventType, setEventType] = useState(EVENT_OPTIONS[0]);
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<'idle' | 'uploading' | 'sending'>('idle');
-  const [result, setResult] = useState<{ cid: string; sha256: string } | null>(null);
+  const [result, setResult] = useState<UploadResponse | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,7 +51,7 @@ export const AppendEventScreen = () => {
       setResult(upload);
 
       setStatus('sending');
-      const tx = await contract.appendEvent(batchId, eventType, upload.cid, upload.sha256);
+      const tx = await contract.appendEvent(batchId, eventType, upload.cid, upload.saltedHash);
       const receipt = await tx.wait();
       setTxHash(receipt.hash);
     } catch (err) {
@@ -54,7 +65,10 @@ export const AppendEventScreen = () => {
   return (
     <form className="screen-card form" onSubmit={onSubmit}>
       <h2>Append Event</h2>
-      <p className="screen-description">Custodians upload the latest inspection/logistics report and commit the hash.</p>
+      <p className="screen-description">
+        Custodians upload the latest inspection/logistics report, the backend salts + hashes it, and we commit the salted
+        hash on-chain. Store the salt securely for verification.
+      </p>
 
       <label>
         Batch ID
@@ -86,7 +100,9 @@ export const AppendEventScreen = () => {
           <p>
             CID <code>{result.cid}</code>
           </p>
-          <p>Hash {result.sha256}</p>
+          <p>SHA-256: {result.sha256}</p>
+          <p>Salted hash (on-chain): {result.saltedHash}</p>
+          <p>Salt: {result.salt}</p>
         </div>
       )}
 

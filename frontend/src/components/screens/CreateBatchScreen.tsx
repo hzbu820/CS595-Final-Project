@@ -3,9 +3,13 @@ import { uploadEventFile } from '../../lib/api';
 import { useWallet } from '../../context/walletContext';
 
 type UploadResponse = {
+  batchId: string;
   cid: string;
   sha256: string;
+  saltedHash: string;
+  salt: string;
   uri: string;
+  metadataUri: string;
   size: number;
 };
 
@@ -49,7 +53,7 @@ export const CreateBatchScreen = () => {
       });
       setUploadInfo(upload);
 
-      const tx = await contract.createBatch(batchId, custodian, upload.cid, upload.sha256);
+      const tx = await contract.createBatch(batchId, custodian, upload.cid, upload.saltedHash);
       const receipt = await tx.wait();
       setTxHash(receipt.hash);
     } catch (err) {
@@ -64,8 +68,8 @@ export const CreateBatchScreen = () => {
     <form className="screen-card form" onSubmit={onSubmit}>
       <h2>Create Batch</h2>
       <p className="screen-description">
-        Producers upload the genesis JSON payload, store it via the backend, and anchor the hash on Sepolia using
-        `createBatch`.
+        Producers upload the genesis JSON payload, store it via the backend, and anchor the salted hash (hash of
+        `salt || json`) on Sepolia using `createBatch`. Keep the salt private for future verification.
       </p>
 
       <div className="form-grid">
@@ -96,11 +100,14 @@ export const CreateBatchScreen = () => {
       {uploadInfo && (
         <div className="callout">
           <p>
-            Stored as <code>{uploadInfo.cid}</code> (hash {uploadInfo.sha256})
+            Stored as <code>{uploadInfo.cid}</code>
           </p>
           <p>
-            Backend URI: <code>{uploadInfo.uri}</code>
+            SHA-256: <code>{uploadInfo.sha256}</code>
           </p>
+          <p>Salted hash (on-chain): <code>{uploadInfo.saltedHash}</code></p>
+          <p>Salt (keep private): <code>{uploadInfo.salt}</code></p>
+          <p>Backend URI: <code>{uploadInfo.uri}</code></p>
         </div>
       )}
 

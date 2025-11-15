@@ -42,14 +42,14 @@ VITE_BACKEND_URL=http://localhost:4000/api
 ```
 
 ## Screens in this demo
-- **Create Batch** – Upload genesis JSON, store via `/events/upload`, then call `createBatch`.
-- **Append Event** – Custodian uploads logistics/inspection JSON and calls `appendEvent`.
+- **Create Batch** – Upload genesis JSON → backend stores the file, generates a 32-byte salt, and returns both the raw SHA-256 and the salted hash. The UI passes the salted hash to `createBatch`.
+- **Append Event** – Custodian uploads logistics/inspection JSON and commits the salted hash via `appendEvent`. The callout shows `{ cid, sha256, saltedHash, salt }` so we can verify later.
 - **Transfer Custody** – Move the batch to the next authorized address via `transferCustody`.
 - **Recall** – Regulator sets recall status + reason (`setRecall`).
-- **Verify File** – Re-upload any JSON and verify its SHA-256 hash against `getEvent`.
-- **Viewer** – Fetch `getBatchSummary`, show the timeline + recall flag, and download stored JSON via CID.
+- **Verify File** – Re-upload JSON, supply its salt, and confirm the salted hash matches `getEvent` (raw hash comparison optional).
+- **Viewer** – Fetches `getBatchSummary`, shows the timeline + recall flag, and lets you download both the JSON and its metadata (`sha256`, `saltedHash`, `salt`) so the Verify tab can recompute the same values.
 
-Each action shows the backend CID/hash response and links to the Sepolia transaction for transparency.
+Every upload reflects the salted hashing workflow, answering the professor’s questions about pre-image hiding and verification. Each transaction still surfaces Sepolia links.
 
 ## Integration notes
 - ABI comes directly from the Hardhat artifact (`frontend/src/abi/FoodTrace.json`).

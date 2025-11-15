@@ -1,6 +1,6 @@
 ﻿import { useState, type FormEvent } from 'react';
 import { useWallet } from '../../context/walletContext';
-import { fetchStoredEvent } from '../../lib/api';
+import { fetchStoredEvent, fetchEventMetadata } from '../../lib/api';
 import { formatTimestamp } from '../../lib/format';
 
 interface BatchSummary {
@@ -20,6 +20,15 @@ interface EventRecord {
   timestamp: bigint;
 }
 
+interface EventMetadata {
+  batchId: string;
+  cid: string;
+  sha256: string;
+  saltedHash: string;
+  salt: string;
+  createdAt: string;
+}
+
 export const ViewerScreen = () => {
   const { contract } = useWallet();
   const [batchId, setBatchId] = useState('');
@@ -29,6 +38,7 @@ export const ViewerScreen = () => {
   const [error, setError] = useState<string | null>(null);
   const [downloadedCid, setDownloadedCid] = useState<string | null>(null);
   const [downloadedJson, setDownloadedJson] = useState<string>('');
+  const [downloadedMeta, setDownloadedMeta] = useState<EventMetadata | null>(null);
 
   const onSearch = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -55,8 +65,10 @@ export const ViewerScreen = () => {
   const handleDownload = async (cid: string) => {
     try {
       const json = await fetchStoredEvent(batchId, cid);
+      const metadata = await fetchEventMetadata(batchId, cid);
       setDownloadedCid(cid);
       setDownloadedJson(JSON.stringify(json, null, 2));
+      setDownloadedMeta(metadata);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
@@ -99,7 +111,7 @@ export const ViewerScreen = () => {
                 <p>
                   <strong>{event.eventType}</strong> by {event.actor} - {formatTimestamp(event.timestamp)}
                 </p>
-                <p>Hash: {event.dataHash}</p>
+                <p>Salted hash (on-chain): {event.dataHash}</p>
                 {event.cid && (
                   <button type="button" className="ghost-button" onClick={() => handleDownload(event.cid)}>
                     Fetch JSON ({event.cid})
@@ -114,6 +126,13 @@ export const ViewerScreen = () => {
       {downloadedCid && (
         <div className="callout">
           <p>Downloaded CID: {downloadedCid}</p>
+          {downloadedMeta && (
+            <>
+              <p>Raw SHA-256: {downloadedMeta.sha256}</p>
+              <p>Salted hash: {downloadedMeta.saltedHash}</p>
+              <p>Salt: {downloadedMeta.salt}</p>
+            </>
+          )}
           <pre>{downloadedJson}</pre>
         </div>
       )}

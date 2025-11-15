@@ -7,10 +7,17 @@ export const VerifyScreen = () => {
   const [batchId, setBatchId] = useState('');
   const [eventIndex, setEventIndex] = useState('0');
   const [fallbackHash, setFallbackHash] = useState('');
+  const [fallbackSalt, setFallbackSalt] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<'idle' | 'checking'>('idle');
-  const [result, setResult] = useState<{ sha256: string; matches?: boolean } | null>(null);
+  const [result, setResult] = useState<{
+    sha256: string;
+    saltedHash?: string;
+    matches?: boolean;
+    matchesSalted?: boolean;
+  } | null>(null);
   const [expected, setExpected] = useState<string>('');
+  const [expectedSalted, setExpectedSalted] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -25,20 +32,30 @@ export const VerifyScreen = () => {
     setError(null);
     setResult(null);
     setExpected('');
+    setExpectedSalted('');
 
     try {
       let expectedHash = fallbackHash.trim();
-      if (!expectedHash && contract && batchId) {
+      let expectedSaltedHash = fallbackSalt.trim();
+      if ((!expectedHash || !expectedSaltedHash) && contract && batchId) {
         const rawIndex = Number(eventIndex);
         const onChain = await (contract as any).getEvent(batchId, rawIndex);
-        expectedHash = onChain.dataHash;
-        setExpected(onChain.dataHash);
+        expectedSaltedHash = onChain.dataHash;
+        setExpectedSalted(onChain.dataHash);
       }
 
-      const verify = await verifyEventFile({ file, expectedHash: expectedHash || undefined });
+      const verify = await verifyEventFile({
+        file,
+        expectedHash: expectedHash || undefined,
+        expectedSaltedHash: expectedSaltedHash || undefined,
+        salt: fallbackSalt || undefined,
+      });
       setResult(verify);
-      if (!expectedHash) {
+      if (!expectedHash && verify.sha256) {
         setExpected(verify.sha256);
+      }
+      if (!expectedSaltedHash && verify.saltedHash) {
+        setExpectedSalted(verify.saltedHash);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -52,7 +69,7 @@ export const VerifyScreen = () => {
     <form className="screen-card form" onSubmit={onSubmit}>
       <h2>Verify Event JSON</h2>
       <p className="screen-description">
-        Upload a JSON document and ensure its SHA-256 hash matches the on-chain record (looked up via getEvent).
+        Upload a JSON document, provide the associated salt, and ensure its salted hash matches the on-chain record.
       </p>
 
       <div className="form-grid">
@@ -68,7 +85,12 @@ export const VerifyScreen = () => {
 
       <label>
         Expected Hash (optional)
-        <input value={fallbackHash} onChange={(e) => setFallbackHash(e.target.value)} placeholder="0x..." />
+        <input value={fallbackHash} onChange={(e) => setFallbackHash(e.target.value)} placeholder="Raw SHA-256" />
+      </label>
+
+      <label>
+        Salt (32-byte hex)
+        <input value={fallbackSalt} onChange={(e) => setFallbackSalt(e.target.value)} placeholder="0x..." />
       </label>
 
       <label className="file-picker">
@@ -80,18 +102,33 @@ export const VerifyScreen = () => {
         {status === 'checking' ? 'Verifying...' : 'Verify Hash'}
       </button>
 
-      {expected && (
+      {(expected || expectedSalted) && (
         <div className="callout">
-          Expected on-chain hash: <code>{expected}</code>
+          {expected && (
+            <p>
+              Raw SHA-256: <code>{expected}</code>
+            </p>
+          )}
+          {expectedSalted && (
+            <p>
+              On-chain salted hash: <code>{expectedSalted}</code>
+            </p>
+          )}
         </div>
       )}
 
       {result && (
         <div className="callout">
-          <p>Computed hash: {result.sha256}</p>
+          <p>Computed raw hash: {result.sha256}</p>
+          {result.saltedHash && <p>Computed salted hash: {result.saltedHash}</p>}
           {result.matches !== undefined && (
             <p className={result.matches ? 'success' : 'error'}>
-              Match: {result.matches ? 'Yes' : 'No'}
+              Raw hash match: {result.matches ? 'Yes' : 'No'}
+            </p>
+          )}
+          {result.matchesSalted !== undefined && (
+            <p className={result.matchesSalted ? 'success' : 'error'}>
+              Salted hash match: {result.matchesSalted ? 'Yes' : 'No'}
             </p>
           )}
         </div>
