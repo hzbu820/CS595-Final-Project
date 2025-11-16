@@ -116,6 +116,11 @@ contract FoodTraceability is Ownable {
         emit BatchStateChanged(batchId, BatchState.Closed);
     }
 
+    function getBatchState(string calldata batchId) external view returns (BatchState) {
+        bytes32 key = _requireBatch(batchId);
+        return batches[key].state;
+    }
+
     function appendEvent(
         string calldata batchId,
         string calldata eventType,
@@ -124,6 +129,7 @@ contract FoodTraceability is Ownable {
     ) external {
         bytes32 key = _requireBatch(batchId);
         Batch storage batch = batches[key];
+        require(batch.state == BatchState.Active, 'batch not active');
         require(_canWriteBatch(batch, msg.sender), 'not allowed');
         _recordEvent(key, eventType, cid, dataHash);
         emit EventAppended(batchId, msg.sender, eventType, cid, dataHash);
@@ -137,6 +143,7 @@ contract FoodTraceability is Ownable {
         require(_isAuthorizedWriter(newCustodian), 'custodian must be authorized');
         bytes32 key = _batchKey(batchId);
         Batch storage batch = batches[key];
+        require(batch.state == BatchState.Active, 'batch not active');
         address previous = batch.currentCustodian;
         batch.currentCustodian = newCustodian;
         _recordEvent(key, 'TRANSFER', '', bytes32(0));
