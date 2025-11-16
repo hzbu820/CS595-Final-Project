@@ -17,9 +17,9 @@ contract FoodTraceability is Ownable {
         address creator;
         address currentCustodian;
         bool exists;
-        bool recalled;
         string recallReason;
         uint256 createdAt;
+        BatchState state;
     }
 
     struct EventRecord {
@@ -52,6 +52,13 @@ contract FoodTraceability is Ownable {
     event CustodyTransferred(string batchId, address indexed from, address indexed to);
     event RecallStatusChanged(string batchId, bool recalled, string reason);
 
+    enum BatchState {
+        Active,
+        Recalled,
+        Sold,
+        Closed
+    }
+
     constructor(address owner_) Ownable(owner_) {}
 
     function setRole(address account, Role role) external onlyOwner {
@@ -59,6 +66,7 @@ contract FoodTraceability is Ownable {
         emit RoleUpdated(account, role);
     }
 
+    // Create a new batch
     function createBatch(
         string calldata batchId,
         address firstCustodian,
@@ -78,10 +86,23 @@ contract FoodTraceability is Ownable {
         batch.currentCustodian = firstCustodian;
         batch.exists = true;
         batch.createdAt = block.timestamp;
+        batch.state = BatchState.Active;
 
         _recordEvent(key, 'CREATE', cid, dataHash);
 
         emit BatchCreated(batchId, msg.sender, firstCustodian, cid, dataHash);
+    }
+
+    function markBatchSold(string calldata batchId) external onlyCustodian(batchId) {
+        bytes32 key = _batchKey(batchId);
+        Batch storage batch = batches[key];
+
+        require(batch.state == BatchState.Active, 'batch not active');
+        require(roles[msg.sender] == Role.Retailer, 'only retailer can mark sold');
+
+        batch.state = BatchState.Sold;
+        _recordEvent(key, 'SOLD', '', bytes32(0));
+        emit EventAppended(batchId, msg.sender, 'SOLD', '', bytes32(0));
     }
 
     function appendEvent(
