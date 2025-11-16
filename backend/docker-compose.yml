@@ -1,0 +1,19 @@
+version: "3.9"
+services:
+  backend:
+    build: .
+    container_name: foodtrace-backend
+    restart: unless-stopped
+    environment:
+      PORT: "4000"
+      FRONTEND_ORIGIN: "http://localhost:5173"
+      STORAGE_DIR: "/app/storage"
+      RPC_URL: "${RPC_URL}"
+      ORACLE_PK: "${ORACLE_PK}"
+      CONTRACT_ADDRESS: "${CONTRACT_ADDRESS}"
+    env_file:
+      - .env
+    volumes:
+      - ./backend/storage:/app/storage   # persist files
+    ports:
+      - "4000:4000"

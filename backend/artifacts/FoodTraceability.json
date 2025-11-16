@@ -1,0 +1,37 @@
+{
+  "abi": [
+    {
+      "type": "function",
+      "name": "appendEvent",
+      "stateMutability": "nonpayable",
+      "inputs": [
+        { "name": "batchId", "type": "bytes32" },
+        { "name": "eventType", "type": "uint8" },
+        { "name": "eventHash", "type": "bytes32" }
+      ],
+      "outputs": []
+    },
+    {
+      "type": "function",
+      "name": "batchEvents",
+      "stateMutability": "view",
+      "inputs": [
+        { "name": "batchId", "type": "bytes32" },
+        { "name": "index", "type": "uint256" }
+      ],
+      "outputs": [
+        { "name": "eventHash", "type": "bytes32" }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "participants",
+      "stateMutability": "view",
+      "inputs": [{ "name": "addr", "type": "address" }],
+      "outputs": [
+        { "name": "enabled", "type": "bool" },
+        { "name": "role", "type": "uint8" }
+      ]
+    }
+  ]
+}
