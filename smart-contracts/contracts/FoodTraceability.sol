@@ -58,6 +58,7 @@ contract FoodTraceability is Ownable {
         Sold,
         Closed
     }
+    event BatchStateChanged(string batchId, BatchState newState);
 
     constructor(address owner_) Ownable(owner_) {}
 
@@ -105,6 +106,16 @@ contract FoodTraceability is Ownable {
         emit EventAppended(batchId, msg.sender, 'SOLD', '', bytes32(0));
     }
 
+    function closeBatch(string calldata batchId) external onlyOwner {
+        bytes32 key = _requireBatch(batchId);
+        Batch storage batch = batches[key];
+        require(batch.state == BatchState.Active, 'batch not active');
+
+        batch.state = BatchState.Closed;
+        _recordEvent(key, 'CLOSED', '', bytes32(0));
+        emit BatchStateChanged(batchId, BatchState.Closed);
+    }
+
     function appendEvent(
         string calldata batchId,
         string calldata eventType,
@@ -139,9 +150,14 @@ contract FoodTraceability is Ownable {
     ) external onlyRole(Role.Regulator) {
         bytes32 key = _requireBatch(batchId);
         Batch storage batch = batches[key];
-        batch.recalled = recalled;
-        batch.recallReason = recalled ? reason : '';
+        require(batch.state == BatchState.Active, 'batch not active');
+        require(bytes(reason).length > 0 || !recalled, 'reason required for recall');
+
+        batch.state = BatchState.Recalled;
+        batch.recallReason = reason;
+        _recordEvent(key, "RECALLED", "", bytes32(0));
         emit RecallStatusChanged(batchId, recalled, reason);
+        emit BatchStateChanged(batchId, BatchState.Recalled);
     }
 
     function getBatchSummary(string calldata batchId)
