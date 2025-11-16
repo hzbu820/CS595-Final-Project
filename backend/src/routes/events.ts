@@ -5,7 +5,7 @@ import {
   readStoredEvent,
   verifyBuffer,
 } from '../services/storage.js';
-import { EventEnvelope, EventPayload, EventType } from '../types.js';
+import { AllowedRoles, EventEnvelope, EventPayload, EventType } from '../types.js';
 import { registerParticipant, commitEvent, getRoleOf } from '../services/chain.js';
 import { recoverSigner } from '../services/signature.js';
 import { hashWithSalt, rand32 } from '../services/hash.js';
@@ -120,7 +120,7 @@ router.post("/events/upload", async (req, res, next) => {
     }
 
     // 2) role check
-    const roleId = await getRoleOf(signer);         // e.g. 2 = Storage
+    const roleId = await getRoleOf(signer);
     const allowed = AllowedRoles[eventType] ?? [];
 
     if (!allowed.includes(roleId)) {
