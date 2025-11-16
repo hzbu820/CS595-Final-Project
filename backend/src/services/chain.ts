@@ -18,6 +18,11 @@ const contract = new Contract(
   signer
 );
 
+export async function registerParticipant(address: string, role: number) {
+  const tx = await contract.registerParticipant(address, role);
+  return await tx.wait();
+}
+
 export async function commitEvent(batchId: string, eventType: string, hash: string) {
   const et = { Create:0, ShipOut:1, ShipIn:2, Storage:3, Inspect:4, Sell:5, Recall:6 }[eventType]!;
   const tx = await contract.appendEvent(batchId as `0x${string}`, et, hash as `0x${string}`);

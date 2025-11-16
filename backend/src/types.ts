@@ -21,3 +21,23 @@ export interface EventEnvelope {
   cid?: string;                    // optional IPFS CID
   createdAt: number;               // unix seconds
 }
+
+// mirror Solidity roles
+export enum RoleId {
+  Manufacturer = 0,
+  Transporter = 1,
+  Storage = 2,
+  Inspector = 3,
+  Retailer = 4,
+}
+
+// which roles are allowed for each eventType
+export const AllowedRoles: Record<EventType, number[]> = {
+  Create:   [RoleId.Manufacturer, RoleId.Inspector],         // only producer/inspector can create batch
+  ShipOut:  [RoleId.Transporter, RoleId.Manufacturer],       // leaving a location
+  ShipIn:   [RoleId.Transporter, RoleId.Storage, RoleId.Retailer], // arriving at a node
+  Storage:  [RoleId.Storage],                                // warehouse temp logs
+  Inspect:  [RoleId.Inspector],                              // third-party checks
+  Sell:     [RoleId.Retailer],                               // supermarket/retailer
+  Recall:   [RoleId.Manufacturer, RoleId.Inspector],         // recall initiated by producer/inspector
+};

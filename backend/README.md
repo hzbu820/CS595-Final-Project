@@ -1,13 +1,45 @@
-﻿# Backend API (Off-Chain Storage)
+﻿# Backend API (Off-Chain Event Storage + Signature Verification)
 
-This package exposes the /upload and /verify endpoints required by the front-end flows. It stores JSON event payloads on disk (or any pluggable storage provider) and returns deterministic hashes and pseudo-CIDs.
+The backend provides a secure off-chain service responsible for verifying signed supply-chain events, hashing and salting payloads, persisting encrypted event envelopes, and committing event hashes to the FoodTraceability smart contract.
+
+It acts as the bridge between the front-end clients (transporters, inspectors, warehouses, retailers) and the on-chain traceability ledger.
 
 
 ## Folder Layout
-- src/server.ts – Express bootstrap and dependency wiring
-- src/routes – Route definitions (events.ts)
-- src/services/storageService.ts – File persistence + hash helpers
-- storage/ – Local folder containing uploaded JSON files (gitignored)
+backend/
+│
+├── src/
+│   ├── server.ts                 # Express app bootstrap, middleware setup, route mounting
+│   │
+│   ├── routes/
+│   │   └── events.ts             # All event-related API endpoints (create, upload, verify, fetch)
+│   │
+│   ├── services/
+│   │   ├── chain.ts              # On-chain interaction (ethers): commitEvent(), getRoleOf(), getHash()
+│   │   ├── storage.ts            # File persistence: save/load JSON envelopes from disk
+│   │   ├── crypto.ts             # AES-256-GCM encryption utilities for event payloads
+│   │   ├── hash.ts               # Canonical JSON hashing + salt handling
+│   │   ├── signature.ts          # EIP-712 signature recovery and verification
+│   │   └── types.ts              # Shared TS types: EventEnvelope, EventPayload, EventType, etc.
+│   │
+│   └── db/                       # Future SQLite/Prisma schema files
+│
+├── artifacts/
+│   └── FoodTraceability.json     # Compiled contract ABI (required by chain.ts)
+│
+├── storage/                      # Persisted encrypted JSON event blobs (gitignored)
+│
+├── Dockerfile                    # Backend Docker build
+├── docker-compose.yml            # App + dependencies (e.g. IPFS/DB/future services)
+│
+├── tsconfig.json                 # TypeScript compiler configuration
+├── package.json                  # Dependencies + scripts
+├── package-lock.json
+│
+├── .env                          # Environment variables (RPC_URL, ORACLE_PK, CONTRACT_ADDRESS...)
+│
+└── README.md                     # Developer documentation
+
 
 ## Integration Contract
 - Upload from UI → returns { cid, sha256, size }
@@ -72,7 +104,37 @@ Notes
 
 * On-chain commit includes only batchId, eventType, and sha256.
 
-### POST /api/events/upload
+### POST `/api/batches/create`
+
+Create a new food batch and record the first `Create` event on-chain.
+
+This endpoint is typically used by **producers** (and optionally inspectors) to
+register a new batch in the system. Internally it:
+
+1. Verifies the EIP-712 signature of the caller.
+2. Checks the caller’s role (must be allowed to create batches).
+3. Computes a salted SHA-256 hash of the batch metadata.
+4. Optionally encrypts the canonical JSON and stores it off-chain.
+5. Commits the hash as a `Create` event for this `batchId` on the smart contract.
+
+### Request
+
+```json
+{
+  "batchId": "0x<32-byte-hex>",
+  "meta": {
+    "product": "Chilled beef",
+    "origin": "US-NE-Plant-42",
+    "productionDate": 1731542400,
+    "extra": { "lot": "A-1024" }
+  },
+  "signature": "0x<eip712-signature>",
+  "signer": "0x<address>"
+}
+```
+
+
+### POST `/api/events/upload`
 
 Accepts a signed payload, verifies signature & role, hashes with salt, persists the envelope, and commits the hash on-chain.
 
@@ -111,7 +173,7 @@ Errors
 * 500 – storage or chain error
 
 
-### POST /api/events/verify
+### POST `/api/events/verify`
 
 Recomputes the salted hash from the stored envelope and compares it with the recorded hash.
 
@@ -130,11 +192,66 @@ Response 200 OK
 }
 ```
 
-### GET /api/events/:batchId/:cid
+### GET `/api/events/:batchId/:cid`
 
 Returns the stored JSON blob for the event (either { envelope, canonical } or { envelope, ciphertext }).
 
 Response 200 OK
+
+
+### POST `/api/participants/register`
+
+Registers a new participant on-chain with a specific role
+(e.g., Manufacturer, Transporter, Warehouse, Inspector, Retailer).
+
+This API is typically used by the admin UI.
+End users (drivers, warehouse staff) do not call this directly.
+
+Request
+```json
+{
+  "address": "0x<ethereum-address>",
+  "role": "Manufacturer"  // or Transporter | Warehouse | Inspector | Retailer
+}
+```
+
+Roles (string → uint8 mapping in Solidity)
+```json
+{
+  "Manufacturer": 0,
+  "Transporter": 1,
+  "Warehouse": 2,
+  "Inspector": 3,
+  "Retailer": 4
+}
+```
+
+Response 200 OK
+```json
+{
+  "ok": true,
+  "txHash": "0x<transaction-hash>",
+  "address": "0x1234...",
+  "role": "Transporter"
+}
+```
+
+The backend’s signer must be the admin (ORACLE_PK private key).
+
+After registration, the participant can start calling /api/events/upload.
+
+### GET `/api/participants/:address/role`
+
+Returns the registered role of a given participant.
+
+Response
+```json
+{
+  "address": "0x1234...",
+  "roleId": 2,
+  "role": "Warehouse"
+}
+```
 
 
 ### Security & Verification Flow
@@ -203,10 +320,12 @@ bytecode — only the ABI section is used.
 The backend uses `ethers.js` to call the following contract functions:
 
 | Function | Solidity Signature | Purpose |
-|-----------|--------------------|----------|
-| `appendEvent(bytes32 batchId, uint8 eventType, bytes32 eventHash)` | `nonpayable` | Records an event hash for a given batch ID. Called by the backend when a new event is uploaded. |
-| `batchEvents(bytes32 batchId, uint256 index)` | `view` | Reads an event hash by index for verification. |
-| `participants(address addr)` | `view` | Checks participant registration and role. Used by backend for signature/authorization verification. |
+|----------|--------------------|---------|
+| `registerParticipant(address user, uint8 role)` | `nonpayable` | Admin-only. Registers a participant and assigns a role (Manufacturer, Transporter, Warehouse, Inspector, Retailer). Called by backend endpoint `/api/participants/register`. |
+| `participants(address addr)` | `view returns (bool enabled, uint8 role)` | Returns whether an address is registered and what role it holds. Backend uses this to validate `signer` during `/api/events/upload`. |
+| `appendEvent(bytes32 batchId, uint8 eventType, bytes32 eventHash)` | `nonpayable` | Records a salted event hash for a batch. Backend calls this immediately after persisting the event envelope off-chain. Role checks are enforced by the contract. |
+| `batchEvents(bytes32 batchId, uint256 index)` | `view returns (bytes32 eventHash)` | Reads an event hash by index. Backend uses this during `/api/events/verify` to confirm correctness of a recomputed salted hash. |
+| (todo) `disableParticipant(address user)` | `nonpayable` | Admin-only. Marks a participant as inactive. The backend does not call this in MVP but the field is read via `participants()`. |
 
 ---
 
