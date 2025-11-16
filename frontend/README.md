@@ -16,8 +16,10 @@ Everything runs locally—I built this UI so we can drive the FoodTraceability c
 ## How to check and verify
 ```bash
 cd frontend
-cp .env.example .env   # fill in VITE_CONTRACT_ADDRESS / VITE_BACKEND_URL
+cp .env.example .env   # fill in VITE_CONTRACT_ADDRESS / VITE_BACKEND_URL, copy in Windows(first time only)
 npm install
+
+#If you have node.js in your path, you can start from here.
 npm run dev            # launches http://localhost:5173
 # in the dev console, press `o` + Enter to open the browser automatically
 ```
