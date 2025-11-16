@@ -17,9 +17,9 @@ contract FoodTraceability is Ownable {
         address creator;
         address currentCustodian;
         bool exists;
-        bool recalled;
         string recallReason;
         uint256 createdAt;
+        BatchState state;
     }
 
     struct EventRecord {
@@ -52,6 +52,14 @@ contract FoodTraceability is Ownable {
     event CustodyTransferred(string batchId, address indexed from, address indexed to);
     event RecallStatusChanged(string batchId, bool recalled, string reason);
 
+    enum BatchState {
+        Active,
+        Recalled,
+        Sold,
+        Closed
+    }
+    event BatchStateChanged(string batchId, BatchState newState);
+
     constructor(address owner_) Ownable(owner_) {}
 
     function setRole(address account, Role role) external onlyOwner {
@@ -59,6 +67,7 @@ contract FoodTraceability is Ownable {
         emit RoleUpdated(account, role);
     }
 
+    // Create a new batch
     function createBatch(
         string calldata batchId,
         address firstCustodian,
@@ -78,10 +87,38 @@ contract FoodTraceability is Ownable {
         batch.currentCustodian = firstCustodian;
         batch.exists = true;
         batch.createdAt = block.timestamp;
+        batch.state = BatchState.Active;
 
         _recordEvent(key, 'CREATE', cid, dataHash);
 
         emit BatchCreated(batchId, msg.sender, firstCustodian, cid, dataHash);
+    }
+
+    function markBatchSold(string calldata batchId) external onlyCustodian(batchId) {
+        bytes32 key = _batchKey(batchId);
+        Batch storage batch = batches[key];
+
+        require(batch.state == BatchState.Active, 'batch not active');
+        require(roles[msg.sender] == Role.Retailer, 'only retailer can mark sold');
+
+        batch.state = BatchState.Sold;
+        _recordEvent(key, 'SOLD', '', bytes32(0));
+        emit EventAppended(batchId, msg.sender, 'SOLD', '', bytes32(0));
+    }
+
+    function closeBatch(string calldata batchId) external onlyOwner {
+        bytes32 key = _requireBatch(batchId);
+        Batch storage batch = batches[key];
+        require(batch.state == BatchState.Active, 'batch not active');
+
+        batch.state = BatchState.Closed;
+        _recordEvent(key, 'CLOSED', '', bytes32(0));
+        emit BatchStateChanged(batchId, BatchState.Closed);
+    }
+
+    function getBatchState(string calldata batchId) external view returns (BatchState) {
+        bytes32 key = _requireBatch(batchId);
+        return batches[key].state;
     }
 
     function appendEvent(
@@ -92,6 +129,7 @@ contract FoodTraceability is Ownable {
     ) external {
         bytes32 key = _requireBatch(batchId);
         Batch storage batch = batches[key];
+        require(batch.state == BatchState.Active, 'batch not active');
         require(_canWriteBatch(batch, msg.sender), 'not allowed');
         _recordEvent(key, eventType, cid, dataHash);
         emit EventAppended(batchId, msg.sender, eventType, cid, dataHash);
@@ -105,6 +143,7 @@ contract FoodTraceability is Ownable {
         require(_isAuthorizedWriter(newCustodian), 'custodian must be authorized');
         bytes32 key = _batchKey(batchId);
         Batch storage batch = batches[key];
+        require(batch.state == BatchState.Active, 'batch not active');
         address previous = batch.currentCustodian;
         batch.currentCustodian = newCustodian;
         _recordEvent(key, 'TRANSFER', '', bytes32(0));
@@ -118,9 +157,14 @@ contract FoodTraceability is Ownable {
     ) external onlyRole(Role.Regulator) {
         bytes32 key = _requireBatch(batchId);
         Batch storage batch = batches[key];
-        batch.recalled = recalled;
-        batch.recallReason = recalled ? reason : '';
+        require(batch.state == BatchState.Active, 'batch not active');
+        require(bytes(reason).length > 0 || !recalled, 'reason required for recall');
+
+        batch.state = BatchState.Recalled;
+        batch.recallReason = reason;
+        _recordEvent(key, "RECALLED", "", bytes32(0));
         emit RecallStatusChanged(batchId, recalled, reason);
+        emit BatchStateChanged(batchId, BatchState.Recalled);
     }
 
     function getBatchSummary(string calldata batchId)
