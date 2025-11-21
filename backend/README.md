@@ -27,7 +27,7 @@ backend/
 ├── artifacts/
 │   └── FoodTraceability.json     # Compiled contract ABI (required by chain.ts)
 │
-├── storage/                      # Persisted encrypted JSON event blobs (gitignored)
+├── storage/                      # (legacy) local storage when using fs; Firebase Storage used now
 │
 ├── Dockerfile                    # Backend Docker build
 ├── docker-compose.yml            # App + dependencies (e.g. IPFS/DB/future services)
@@ -46,6 +46,11 @@ backend/
 - Verify JSON → returns { sha256, matches }
 - Files saved under storage/<batchId>/<cid> enabling manual inspection during demos
 
+Storage backend now targets **Firebase Storage** via `firebase-admin`. Required env:
+
+- `FIREBASE_STORAGE_BUCKET` (e.g., `your-project.appspot.com`)
+- Either `FIREBASE_SERVICE_ACCOUNT_BASE64` (base64 of service account JSON) or `FIREBASE_SERVICE_ACCOUNT_JSON`; falls back to `google-application-default` if neither is set.
+
 Extend this service with authentication, S3/IPFS adapters, or database persistence as needed.
 
 # Backend API (Events)
@@ -63,7 +68,7 @@ The backend verifies EIP-712 signatures, adds a random 32-byte salt, computes
 
 ### `EventType`
 
-"Create" | "ShipOut" | "ShipIn" | "Storage" | "Inspect" | "Sell" | "Recall"
+"Create" | "Transport" | "Inspect"
 
 
 ### `EventPayload`
@@ -156,9 +161,11 @@ Response 200 OK
   "txHash": "0x<transaction-hash>",
   "batchId": "0x<...>",
   "sha256": "0x<hash>",
+  "saltedHash": "0x<hash>",          // alias to match front-end
   "salt": "0x<32-byte-hex>",        // off-chain only; not stored on-chain
   "cid": "uuid-or-ipfs-cid.json",
-  "uri": "/api/events/0xBATCHID/uuid-or-ipfs-cid.json"
+  "uri": "/api/events/0xBATCHID/uuid-or-ipfs-cid.json",
+  "metadataUri": "/api/events/0xBATCHID/uuid-or-ipfs-cid.json" // alias to match front-end
 }
 ```
 
@@ -337,6 +344,3 @@ RPC_URL=https://sepolia.infura.io/v3/
 <YOUR_KEY>
 ORACLE_PK=0x<private-key> # backend's signing wallet
 CONTRACT_ADDRESS=0x<deployed-contract> # FoodTraceability.sol deployed address
-
-
-

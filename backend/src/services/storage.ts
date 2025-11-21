@@ -1,9 +1,31 @@
-﻿import { promises as fs } from 'node:fs';
-import path from 'node:path';
-import crypto from 'node:crypto';
+import crypto from "node:crypto";
+import admin from "firebase-admin";
 import stringify from "json-stable-stringify";
 
-const ROOT_STORAGE_DIR = path.resolve(process.cwd(), process.env.STORAGE_DIR ?? 'storage');
+// Firebase bootstrap
+const getFirebaseApp = () => {
+  if (admin.apps.length) return admin.app();
+
+  const bucket = process.env.FIREBASE_STORAGE_BUCKET;
+  if (!bucket) {
+    throw new Error("FIREBASE_STORAGE_BUCKET not set");
+  }
+
+  const svcB64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
+  const svcJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  const credential = svcB64
+    ? admin.credential.cert(JSON.parse(Buffer.from(svcB64, "base64").toString("utf8")))
+    : svcJson
+      ? admin.credential.cert(JSON.parse(svcJson))
+      : admin.credential.applicationDefault();
+
+  return admin.initializeApp({
+    credential,
+    storageBucket: bucket,
+  });
+};
+
+const getBucket = () => getFirebaseApp().storage().bucket();
 
 interface PersistResult {
   cid: string;
@@ -20,18 +42,9 @@ const MAX_BYTES = Number(process.env.MAX_EVENT_BYTES ?? 256 * 1024); // 256KB de
 const sha256Hex = (buf: Buffer): `0x${string}` =>
   ("0x" + crypto.createHash("sha256").update(buf).digest("hex")) as `0x${string}`;
 
-const safeJoin = (...parts: string[]) => {
-  const p = path.join(...parts);
-  const abs = path.resolve(p);
-  if (!abs.startsWith(ROOT_STORAGE_DIR)) {
-    throw new Error("Unsafe path resolution");
-  }
-  return abs;
-};
-
 // ---- API
 export const ensureStorageReady = async () => {
-  await fs.mkdir(ROOT_STORAGE_DIR, { recursive: true });
+  getBucket(); // will throw if env is missing
 };
 
 // Persist an arbitrary Buffer (e.g., already-canonicalized JSON)
@@ -40,12 +53,16 @@ export const persistEventFile = async (buffer: Buffer, batchId: string): Promise
   if (buffer.byteLength > MAX_BYTES) throw new Error("Payload too large");
 
   const hash = sha256Hex(buffer);
-  const cid = `${crypto.randomUUID()}.json`;                // (bugfix) proper template string
-  const batchDir = safeJoin(ROOT_STORAGE_DIR, batchId);
-  await fs.mkdir(batchDir, { recursive: true });
-  const filePath = safeJoin(batchDir, cid);
-  await fs.writeFile(filePath, buffer, { encoding: "utf8" });
+  const cid = `${crypto.randomUUID()}.json`;
+  const objectPath = `${batchId}/${cid}`;
+  const bucket = getBucket();
 
+  await bucket.file(objectPath).save(buffer, {
+    resumable: false,
+    contentType: "application/json",
+  });
+
+  const filePath = `gs://${bucket.name}/${objectPath}`;
   return { cid, sha256: hash, size: buffer.length, filePath };
 };
 
@@ -55,8 +72,7 @@ export const persistJson = async (obj: unknown, batchId: string): Promise<Persis
     throw new Error("persistJson: payload is undefined");
   }
 
-  // stringify(...) returns string | undefined if value could be undefined — we just guarded it.
-  const canonical = stringify(obj)!;          // non-null assertion is safe after the guard
+  const canonical = stringify(obj)!;
   const buf = Buffer.from(canonical, "utf8");
   return persistEventFile(buf, batchId);
 };
@@ -70,8 +86,12 @@ export const verifyBuffer = (buffer: Buffer, expected?: string) => {
 export const readStoredEvent = async (batchId: string, cid: string) => {
   if (!BATCH_ID_RE.test(batchId)) throw new Error("Invalid batchId");
   if (!CID_RE.test(cid)) throw new Error("Invalid cid");
-  const filePath = safeJoin(ROOT_STORAGE_DIR, batchId, cid);
-  const buf = await fs.readFile(filePath);                  // return raw buffer
+
+  const objectPath = `${batchId}/${cid}`;
+  const bucket = getBucket();
+  const [buf] = await bucket.file(objectPath).download();
+  const filePath = `gs://${bucket.name}/${objectPath}`;
+
   return { buffer: buf, text: buf.toString("utf8"), filePath };
 };
 
