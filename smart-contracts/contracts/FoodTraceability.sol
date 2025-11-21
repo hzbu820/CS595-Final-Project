@@ -33,6 +33,7 @@ contract FoodTraceability is Ownable {
     mapping(address => Role) public roles;
     mapping(bytes32 => Batch) private batches;
     mapping(bytes32 => EventRecord[]) private batchEvents;
+    uint256 public totalBatches;
 
     event RoleUpdated(address indexed account, Role role);
     event BatchCreated(
@@ -54,8 +55,8 @@ contract FoodTraceability is Ownable {
 
     enum BatchState {
         Active,
-        Recalled,
         Sold,
+        Recalled,
         Closed
     }
     event BatchStateChanged(string batchId, BatchState newState);
@@ -89,6 +90,8 @@ contract FoodTraceability is Ownable {
         batch.createdAt = block.timestamp;
         batch.state = BatchState.Active;
 
+        totalBatches += 1;
+
         _recordEvent(key, 'CREATE', cid, dataHash);
 
         emit BatchCreated(batchId, msg.sender, firstCustodian, cid, dataHash);
@@ -103,7 +106,7 @@ contract FoodTraceability is Ownable {
 
         batch.state = BatchState.Sold;
         _recordEvent(key, 'SOLD', '', bytes32(0));
-        emit EventAppended(batchId, msg.sender, 'SOLD', '', bytes32(0));
+        emit BatchStateChanged(batchId, BatchState.Sold);
     }
 
     function closeBatch(string calldata batchId) external onlyOwner {
@@ -116,10 +119,55 @@ contract FoodTraceability is Ownable {
         emit BatchStateChanged(batchId, BatchState.Closed);
     }
 
+    // Frontend / view functions
+    // -------------------------------------------
     function getBatchState(string calldata batchId) external view returns (BatchState) {
         bytes32 key = _requireBatch(batchId);
         return batches[key].state;
     }
+
+    function getBatchSummary(string calldata batchId)
+        external
+        view
+        returns (Batch memory summary, EventRecord[] memory events)
+    {
+        bytes32 key = _requireBatch(batchId);
+        Batch storage batch = batches[key];
+        summary = batch;
+        events = batchEvents[key];
+    }
+
+    function getEvent(string calldata batchId, uint256 index)
+        external
+        view
+        returns (EventRecord memory)
+    {
+        bytes32 key = _requireBatch(batchId);
+        require(index < batchEvents[key].length, 'index out of bounds');
+        return batchEvents[key][index];
+    }
+
+    function getRole(address account) external view returns (Role) {
+        return roles[account];
+    }
+
+    function isRecalled(string calldata batchId) external view returns (bool) {
+        bytes32 key = _requireBatch(batchId);
+        return batches[key].state == BatchState.Recalled;
+    }
+
+    function getCurrentCustodian(string calldata batchId) external view returns (address) {
+        bytes32 key = _requireBatch(batchId);
+        return batches[key].currentCustodian;
+    }
+
+    function getBatchCount() external view returns (uint256) {
+        return totalBatches;
+    }
+
+    
+
+    // -------------------------------------------
 
     function appendEvent(
         string calldata batchId,
@@ -152,40 +200,18 @@ contract FoodTraceability is Ownable {
 
     function setRecall(
         string calldata batchId,
-        bool recalled,
         string calldata reason
     ) external onlyRole(Role.Regulator) {
         bytes32 key = _requireBatch(batchId);
         Batch storage batch = batches[key];
         require(batch.state == BatchState.Active, 'batch not active');
-        require(bytes(reason).length > 0 || !recalled, 'reason required for recall');
+        require(bytes(reason).length > 0, 'reason required');
 
         batch.state = BatchState.Recalled;
         batch.recallReason = reason;
         _recordEvent(key, "RECALLED", "", bytes32(0));
-        emit RecallStatusChanged(batchId, recalled, reason);
+        emit RecallStatusChanged(batchId, true, reason);
         emit BatchStateChanged(batchId, BatchState.Recalled);
-    }
-
-    function getBatchSummary(string calldata batchId)
-        external
-        view
-        returns (Batch memory summary, EventRecord[] memory events)
-    {
-        bytes32 key = _requireBatch(batchId);
-        Batch storage batch = batches[key];
-        summary = batch;
-        events = batchEvents[key];
-    }
-
-    function getEvent(string calldata batchId, uint256 index)
-        external
-        view
-        returns (EventRecord memory)
-    {
-        bytes32 key = _requireBatch(batchId);
-        require(index < batchEvents[key].length, 'index out of bounds');
-        return batchEvents[key][index];
     }
 
     function _recordEvent(
