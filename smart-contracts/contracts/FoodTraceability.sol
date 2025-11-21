@@ -156,6 +156,17 @@ contract FoodTraceability is Ownable {
         return batches[key].state == BatchState.Recalled;
     }
 
+    function getCurrentCustodian(string calldata batchId) external view returns (address) {
+        bytes32 key = _requireBatch(batchId);
+        return batches[key].currentCustodian;
+    }
+
+    function getBatchCount() external view returns (uint256) {
+        return totalBatches;
+    }
+
+    
+
     // -------------------------------------------
 
     function appendEvent(
