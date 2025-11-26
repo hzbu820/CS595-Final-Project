@@ -1,44 +1,36 @@
 ﻿# Backend API (Off-Chain Event Storage + Signature Verification)
 
-The backend provides a secure off-chain service responsible for verifying signed supply-chain events, hashing and salting payloads, persisting encrypted event envelopes, and committing event hashes to the FoodTraceability smart contract.
+The backend provides a secure off-chain service responsible for verifying signed supply-chain events, hashing and salting payloads, and persisting encrypted event envelopes. It prepares data for the FoodTraceability smart contract; dApps submit on-chain transactions from the user’s wallet (MetaMask), then report tx status back to the backend.
 
-It acts as the bridge between the front-end clients (transporters, inspectors, warehouses, retailers) and the on-chain traceability ledger.
+It acts as the bridge between the front-end clients (transporters, inspectors, retailers, regulators) and the on-chain traceability ledger.
 
 
 ## Folder Layout
+```
 backend/
-│
 ├── src/
-│   ├── server.ts                 # Express app bootstrap, middleware setup, route mounting
-│   │
+│   ├── server.ts            # Express app bootstrap, middleware, routes mount
 │   ├── routes/
-│   │   └── events.ts             # All event-related API endpoints (create, upload, verify, fetch)
-│   │
-│   ├── services/
-│   │   ├── chain.ts              # On-chain interaction (ethers): commitEvent(), getRoleOf(), getHash()
-│   │   ├── storage.ts            # File persistence: save/load JSON envelopes from disk
-│   │   ├── crypto.ts             # AES-256-GCM encryption utilities for event payloads
-│   │   ├── hash.ts               # Canonical JSON hashing + salt handling
-│   │   ├── signature.ts          # EIP-712 signature recovery and verification
-│   │   └── types.ts              # Shared TS types: EventEnvelope, EventPayload, EventType, etc.
-│   │
-│   └── db/                       # Future SQLite/Prisma schema files
-│
+│   │   └── events.ts        # Event-related API endpoints
+│   └── services/
+│       ├── chain.ts         # On-chain helpers: setRole/getRole (optional create/append)
+│       ├── storage.ts       # Firebase Storage read/write
+│       ├── crypto.ts        # AES-256-GCM encryption utilities
+│       ├── hash.ts          # Canonical JSON hashing + salt
+│       ├── signature.ts     # EIP-712 signature recovery
+│       └── types.ts         # Shared TS types
+├── db/                      # Future SQLite/Prisma schema
 ├── artifacts/
-│   └── FoodTraceability.json     # Compiled contract ABI (required by chain.ts)
-│
-├── storage/                      # (legacy) local storage when using fs; Firebase Storage used now
-│
-├── Dockerfile                    # Backend Docker build
-├── docker-compose.yml            # App + dependencies (e.g. IPFS/DB/future services)
-│
-├── tsconfig.json                 # TypeScript compiler configuration
-├── package.json                  # Dependencies + scripts
+│   └── FoodTraceability.json# Compiled contract ABI
+├── storage/                 # Legacy local storage (unused with Firebase)
+├── Dockerfile               # Backend Docker build
+├── docker-compose.yml       # App + optional deps
+├── tsconfig.json            # TypeScript config
+├── package.json             # Dependencies + scripts
 ├── package-lock.json
-│
-├── .env                          # Environment variables (RPC_URL, ORACLE_PK, CONTRACT_ADDRESS...)
-│
-└── README.md                     # Developer documentation
+├── .env                     # Environment variables
+└── README.md                # Developer documentation
+```
 
 
 ## Integration Contract
@@ -60,7 +52,7 @@ Extend this service with authentication, S3/IPFS adapters, or database persisten
 All endpoints use **JSON** (`Content-Type: application/json`).
 
 The backend verifies EIP-712 signatures, adds a random 32-byte salt, computes  
-`SHA256(canonicalJSON || salt)`, stores the envelope off-chain, and commits the hash on-chain.
+`SHA256(canonicalJSON || salt)`, stores the envelope off-chain, and returns the salted hash + CID for the dApp to submit on-chain.
 
 ---
 
@@ -75,7 +67,7 @@ The backend verifies EIP-712 signatures, adds a random 32-byte salt, computes
 ```json
 {
   "batchId": "0x<32-byte-hex>",
-  "eventType": "Storage",
+  "eventType": "Transport",
   "data": { "...": "arbitrary event fields" }
 }
 ```
@@ -84,7 +76,7 @@ The backend verifies EIP-712 signatures, adds a random 32-byte salt, computes
 Stored EventEnvelope (off-chain blob)
 ```json
 {
-  "payload": { "batchId": "0x...", "eventType": "Storage", "data": { ... } },
+  "payload": { "batchId": "0x...", "eventType": "Transport", "data": { ... } },
   "signer": "0x<address>",
   "signature": "0x<eip712-signature>",
   "salt": "0x<32-byte-hex>",
@@ -107,20 +99,19 @@ Notes
 
 * If BACKEND_AES_KEY is set, the stored file contains { envelope, ciphertext }; otherwise { envelope, canonical }.
 
-* On-chain commit includes only batchId, eventType, and sha256.
+* The dApp uses the returned salted hash when calling the smart contract.
 
 ### POST `/api/batches/create`
 
-Create a new food batch and record the first `Create` event on-chain.
+Create a new food batch and store the genesis envelope off-chain. The dApp then calls the smart contract from the user’s wallet with the returned `cid` and `saltedHash`, and finally reports status back to the backend.
 
-This endpoint is typically used by **producers** (and optionally inspectors) to
-register a new batch in the system. Internally it:
+This endpoint is typically used by **producers** to register a new batch. Internally it:
 
 1. Verifies the EIP-712 signature of the caller.
-2. Checks the caller’s role (must be allowed to create batches).
+2. Checks the caller’s role (must be Producer).
 3. Computes a salted SHA-256 hash of the batch metadata.
-4. Optionally encrypts the canonical JSON and stores it off-chain.
-5. Commits the hash as a `Create` event for this `batchId` on the smart contract.
+4. Optionally encrypts the canonical JSON and stores it off-chain (Firebase Storage).
+5. Records a Firestore `batches/{batchId}` doc with `status: "pending"` (awaiting on-chain tx from the client).
 
 ### Request
 
@@ -138,16 +129,34 @@ register a new batch in the system. Internally it:
 }
 ```
 
+Response 200 OK
+```json
+{
+  "ok": true,
+  "batchId": "0x<...>",
+  "custodian": "0x<address>",
+  "sha256": "0x<hash>",
+  "saltedHash": "0x<hash>",
+  "salt": "0x<32-byte-hex>",
+  "cid": "uuid-or-ipfs-cid.json",
+  "uri": "/api/events/0xBATCHID/uuid-or-ipfs-cid.json",
+  "metadataUri": "/api/events/0xBATCHID/uuid-or-ipfs-cid.json",
+  "status": "pending"
+}
+```
+
+Client should then submit the on-chain `createBatch` tx using `cid` and `saltedHash`, and afterward call `POST /api/batches/:batchId/status` to mark `confirmed` or `failed`.
+
 
 ### POST `/api/events/upload`
 
-Accepts a signed payload, verifies signature & role, hashes with salt, persists the envelope, and commits the hash on-chain.
+Accepts a signed payload, verifies signature & role, hashes with salt, and persists the envelope. The dApp then calls the smart contract from the user’s wallet using the returned `cid` and `saltedHash`, and finally reports status back to the backend.
 
 Request
 ```json
 {
   "batchId": "0x<32-byte-hex>",
-  "eventType": "Storage",
+  "eventType": "Transport",
   "data": { "temperature": 8.7, "ts": 1731599999 },
   "signature": "0x<eip712-signature>",
   "signer": "0x<address>"
@@ -158,16 +167,18 @@ Response 200 OK
 ```json
 {
   "ok": true,
-  "txHash": "0x<transaction-hash>",
   "batchId": "0x<...>",
   "sha256": "0x<hash>",
   "saltedHash": "0x<hash>",          // alias to match front-end
   "salt": "0x<32-byte-hex>",        // off-chain only; not stored on-chain
   "cid": "uuid-or-ipfs-cid.json",
   "uri": "/api/events/0xBATCHID/uuid-or-ipfs-cid.json",
-  "metadataUri": "/api/events/0xBATCHID/uuid-or-ipfs-cid.json" // alias to match front-end
+  "metadataUri": "/api/events/0xBATCHID/uuid-or-ipfs-cid.json", // alias to match front-end
+  "status": "pending"
 }
 ```
+
+Client should then submit the on-chain `appendEvent` tx using `cid` and `saltedHash`, and afterward call `POST /api/events/:cid/status` to mark `confirmed` or `failed`.
 
 Errors
 
@@ -206,10 +217,39 @@ Returns the stored JSON blob for the event (either { envelope, canonical } or { 
 Response 200 OK
 
 
+### POST `/api/events/:cid/status`
+
+Mark an uploaded event as `confirmed` or `failed` after the on-chain tx settles.
+
+Request
+```json
+{ "status": "confirmed", "txHash": "0x<transaction-hash>" }
+```
+
+Response 200 OK
+```json
+{ "ok": true, "status": "confirmed", "txHash": "0x<transaction-hash>" }
+```
+
+
+### POST `/api/batches/:batchId/status`
+
+Mark a created batch as `confirmed` or `failed` after the on-chain tx settles.
+
+Request
+```json
+{ "status": "confirmed", "txHash": "0x<transaction-hash>" }
+```
+
+Response 200 OK
+```json
+{ "ok": true, "status": "confirmed", "txHash": "0x<transaction-hash>" }
+```
+
+
 ### POST `/api/participants/register`
 
-Registers a new participant on-chain with a specific role
-(e.g., Manufacturer, Transporter, Warehouse, Inspector, Retailer).
+Registers a new participant on-chain with a specific role.
 
 This API is typically used by the admin UI.
 End users (drivers, warehouse staff) do not call this directly.
@@ -218,18 +258,7 @@ Request
 ```json
 {
   "address": "0x<ethereum-address>",
-  "role": "Manufacturer"  // or Transporter | Warehouse | Inspector | Retailer
-}
-```
-
-Roles (string → uint8 mapping in Solidity)
-```json
-{
-  "Manufacturer": 0,
-  "Transporter": 1,
-  "Warehouse": 2,
-  "Inspector": 3,
-  "Retailer": 4
+  "role": 1  // 1=Producer, 2=Transporter, 3=Retailer, 4=Regulator
 }
 ```
 
@@ -256,22 +285,19 @@ Response
 {
   "address": "0x1234...",
   "roleId": 2,
-  "role": "Warehouse"
+  "role": "Transporter"
 }
 ```
 
 
 ### Security & Verification Flow
 
-Signature check: Backend verifies EIP-712 signature using the on-chain Role Registry.
-
-Salted hash: sha256 = SHA256(canonicalJSON || salt); salt stored only off-chain.
-
-Optional encryption: If BACKEND_AES_KEY is set, canonical JSON encrypted with AES-256-GCM.
-
-On-chain commit: Backend calls appendEvent(batchId, eventType, sha256).
-
-Audit: Anyone can fetch /api/events/:batchId/:cid, recompute hash, and confirm equality.
+- Backend verifies EIP-712 signature, role (Producer/Transporter/Retailer/Regulator), and computes salted hash: `sha256 = SHA256(canonicalJSON || salt)`.
+- Optional encryption: If BACKEND_AES_KEY is set, canonical JSON is encrypted with AES-256-GCM.
+- Backend stores the envelope off-chain (Firebase Storage) and writes Firestore metadata with `status: pending`.
+- DApp submits the smart-contract tx from the user’s wallet using `cid` + `saltedHash`.
+- DApp calls `/api/events/:cid/status` or `/api/batches/:batchId/status` to mark `confirmed` or `failed`.
+- Audit: Anyone can fetch `/api/events/:batchId/:cid`, recompute hash, and confirm equality.
 
 ### Environment Variables
 PORT=4000
@@ -282,14 +308,15 @@ RPC_URL=https://sepolia.infura.io/v3/...
 ORACLE_PK=0x<private-key>
 CONTRACT_ADDRESS=0x<FoodTraceability.sol deployed address>
 
-# Local storage
-STORAGE_DIR=storage
+# Firebase (Storage + Firestore)
+FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+FIREBASE_SERVICE_ACCOUNT_BASE64=<base64-of-service-account-json>  # or FIREBASE_SERVICE_ACCOUNT_JSON
 
 # Optional encryption key (32 bytes hex → 64 chars)
 BACKEND_AES_KEY=9f1d...
 
-# Optional IPFS
-IPFS_API_URL=http://127.0.0.1:5001
+# Legacy/local storage (if not using Firebase)
+STORAGE_DIR=storage
 
 📋 Status Codes
 Code	Meaning
@@ -303,9 +330,7 @@ Code	Meaning
 
 ## Smart Contract ↔ Backend Interface
 
-The backend communicates with the **FoodTraceability** smart contract to record
-verifiable supply-chain events on Ethereum (or a compatible testnet such as
-Sepolia).
+The backend prepares salted hashes and metadata for the **FoodTraceability** smart contract; the dApp submits transactions from the user’s wallet (e.g., MetaMask) on Ethereum/Sepolia.
 
 ### Contract → Backend API Expectations
 

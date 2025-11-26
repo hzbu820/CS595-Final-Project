@@ -28,6 +28,7 @@ smart-contracts/typechain/
 # Backend runtime data
 backend/storage/
 !backend/storage/.gitkeep
+config/firebase-service-account.json
 
 # Frontend build
 frontend/node_modules/

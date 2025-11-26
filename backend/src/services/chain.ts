@@ -13,15 +13,24 @@ const abiJson = JSON.parse(abiRaw);
 const abi = (Array.isArray(abiJson) ? abiJson : abiJson.abi) as InterfaceAbi;
 
 const provider = new JsonRpcProvider(process.env.RPC_URL!);
-const signer = new Wallet(process.env.ORACLE_PK!, provider);
 const contract = new Contract(
   process.env.CONTRACT_ADDRESS!,
   abi,
-  signer
+  provider
 );
 
+const getSignerContract = (): any => {
+  const pk = process.env.ORACLE_PK;
+  if (!pk) {
+    throw new Error("ORACLE_PK is required for write operations (e.g. registerParticipant)");
+  }
+  const signer = new Wallet(pk, provider);
+  return contract.connect(signer) as any;
+};
+
 export async function registerParticipant(address: string, role: number) {
-  const tx = await contract.setRole(address, role);
+  const signerContract = getSignerContract();
+  const tx = await signerContract.setRole(address, role);
   return await tx.wait();
 }
 
@@ -31,7 +40,8 @@ export async function createBatch(
   cid: string,
   dataHash: string,
 ) {
-  const tx = await contract.createBatch(
+  const signerContract = getSignerContract();
+  const tx = await signerContract.createBatch(
     batchId,
     firstCustodian,
     cid,
@@ -41,7 +51,8 @@ export async function createBatch(
 }
 
 export async function commitEvent(batchId: string, eventType: string, cid: string, hash: string) {
-  const tx = await contract.appendEvent(
+  const signerContract = getSignerContract();
+  const tx = await signerContract.appendEvent(
     batchId,
     eventType,
     cid,
@@ -56,6 +67,7 @@ export async function getOnChainEvent(batchId: string, idx: number) {
 }
 
 export async function getRoleOf(address: `0x${string}`): Promise<number> {
-  const role = await (contract as any).getRole(address);
-  return Number(role);
+  // ABI currently exposes roles(address) view, not getRole(address)
+  const value = await (contract as any).roles(address);
+  return Number(value);
 }

@@ -1,15 +1,11 @@
 import crypto from "node:crypto";
 import admin from "firebase-admin";
+import { getFirestore } from "firebase-admin/firestore";
 import stringify from "json-stable-stringify";
 
 // Firebase bootstrap
 const getFirebaseApp = () => {
   if (admin.apps.length) return admin.app();
-
-  const bucket = process.env.FIREBASE_STORAGE_BUCKET;
-  if (!bucket) {
-    throw new Error("FIREBASE_STORAGE_BUCKET not set");
-  }
 
   const svcB64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
   const svcJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
@@ -19,13 +15,11 @@ const getFirebaseApp = () => {
       ? admin.credential.cert(JSON.parse(svcJson))
       : admin.credential.applicationDefault();
 
-  return admin.initializeApp({
-    credential,
-    storageBucket: bucket,
-  });
+  // storageBucket is optional now; we use Firestore for blobs
+  return admin.initializeApp({ credential });
 };
 
-const getBucket = () => getFirebaseApp().storage().bucket();
+const getDb = () => getFirestore(getFirebaseApp());
 
 interface PersistResult {
   cid: string;
@@ -44,7 +38,8 @@ const sha256Hex = (buf: Buffer): `0x${string}` =>
 
 // ---- API
 export const ensureStorageReady = async () => {
-  getBucket(); // will throw if env is missing
+  // ensure Firestore is reachable
+  await getDb().listCollections();
 };
 
 // Persist an arbitrary Buffer (e.g., already-canonicalized JSON)
@@ -55,14 +50,17 @@ export const persistEventFile = async (buffer: Buffer, batchId: string): Promise
   const hash = sha256Hex(buffer);
   const cid = `${crypto.randomUUID()}.json`;
   const objectPath = `${batchId}/${cid}`;
-  const bucket = getBucket();
+  const db = getDb();
 
-  await bucket.file(objectPath).save(buffer, {
-    resumable: false,
-    contentType: "application/json",
+  await db.collection("eventBlobs").doc(objectPath).set({
+    batchId,
+    cid,
+    blob: buffer.toString("utf8"),
+    sha256: hash,
+    createdAt: Date.now(),
   });
 
-  const filePath = `gs://${bucket.name}/${objectPath}`;
+  const filePath = `firestore://eventBlobs/${objectPath}`;
   return { cid, sha256: hash, size: buffer.length, filePath };
 };
 
@@ -88,9 +86,13 @@ export const readStoredEvent = async (batchId: string, cid: string) => {
   if (!CID_RE.test(cid)) throw new Error("Invalid cid");
 
   const objectPath = `${batchId}/${cid}`;
-  const bucket = getBucket();
-  const [buf] = await bucket.file(objectPath).download();
-  const filePath = `gs://${bucket.name}/${objectPath}`;
+  const db = getDb();
+  const snap = await db.collection("eventBlobs").doc(objectPath).get();
+  if (!snap.exists) throw new Error("Stored event not found");
+  const blob = snap.get("blob") as string | undefined;
+  if (!blob) throw new Error("Stored event blob missing");
+  const buf = Buffer.from(blob, "utf8");
+  const filePath = `firestore://eventBlobs/${objectPath}`;
 
   return { buffer: buf, text: buf.toString("utf8"), filePath };
 };

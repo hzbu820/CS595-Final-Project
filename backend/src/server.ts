@@ -13,7 +13,7 @@ app.use(morgan("dev"));
 app.use(express.json({ limit: "1mb" }));
 app.use(rateLimit({ windowMs: 60_000, max: 120 }));
 
-app.use("/api/events", eventsRouter);
+app.use("/api", eventsRouter);
 
 app.listen(process.env.PORT ?? 4000, () =>
   console.log(`backend listening on :${process.env.PORT ?? 4000}`)

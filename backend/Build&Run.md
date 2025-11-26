@@ -1,4 +1,13 @@
 ```
+local run
+# 1. Build and run
+npm run build
+npm start
+
+then use Postman to test apis
+```
+
+```
 # 1. Build and run
 docker compose up --build -d
 

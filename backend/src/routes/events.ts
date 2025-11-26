@@ -118,7 +118,6 @@ router.post("/batches/create", async (req, res, next) => {
   }
 });
 
-
 // POST /events/upload
 router.post("/events/upload", async (req, res, next) => {
   try {
