@@ -1,4 +1,4 @@
-﻿import { useWallet } from '../../context/walletContext';
+import { useWallet } from '../../context/walletContext';
 import { shortAddress } from '../../lib/ethereum';
 
 export const WalletPanel = () => {
@@ -37,7 +37,7 @@ export const WalletPanel = () => {
         <p className="wallet-title">Wallet</p>
         <p className="wallet-text">{account ? shortAddress(account) : 'Not connected'}</p>
         <p className="wallet-role">Role: {role}</p>
-        <p className="wallet-network">Network: {chainId ?? '—'}</p>
+        <p className="wallet-network">Network: {chainId ?? '--'}</p>
       </div>
 
       {error && <p className="wallet-error">{error}</p>}
@@ -45,7 +45,7 @@ export const WalletPanel = () => {
       <div className="wallet-actions">
         {!account && (
           <button className="primary" onClick={connect} disabled={status !== 'idle'}>
-            {status === 'connecting' ? 'Connecting…' : 'Connect Wallet'}
+            {status === 'connecting' ? 'Connecting...' : 'Connect Wallet'}
           </button>
         )}
 
@@ -55,12 +55,12 @@ export const WalletPanel = () => {
             onClick={switchToTargetChain}
             disabled={status === 'switching'}
           >
-            {status === 'switching' ? 'Switching…' : 'Switch to Sepolia'}
+            {status === 'switching' ? 'Switching...' : 'Switch to Sepolia'}
           </button>
         )}
 
         {account && !needsNetworkSwitch && (
-          <span className="wallet-hint">Ready ✔︎</span>
+          <span className="wallet-hint">Ready</span>
         )}
       </div>
     </div>

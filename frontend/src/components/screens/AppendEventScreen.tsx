@@ -1,28 +1,42 @@
-﻿import { useState, type FormEvent } from 'react';
-import { uploadEventFile } from '../../lib/api';
+import { useState, type FormEvent } from 'react';
 import { useWallet } from '../../context/walletContext';
+import { uploadSignedEvent, updateEventStatus } from '../../lib/api';
+import { signEventPayload } from '../../lib/signing';
+import { useAuth } from '../../context/authContext';
 
 type UploadResponse = {
   batchId: string;
-  cid: string;
   sha256: string;
   saltedHash: string;
   salt: string;
+  cid: string;
   uri: string;
-  metadataUri: string;
-  size: number;
+  status: string;
 };
 
-const EVENT_OPTIONS = ['STORAGE', 'TRANSPORT', 'INSPECTION', 'RETAIL', 'SALE'];
+const EVENT_OPTIONS = ['Transport', 'Inspect'];
+
+const buildSampleEvent = () => ({
+  temperatureC: Number((2 + Math.random() * 4).toFixed(1)),
+  humidity: Number((60 + Math.random() * 10).toFixed(1)),
+  gps: {
+    lat: Number((40 + Math.random()).toFixed(6)),
+    lng: Number((-74 + Math.random()).toFixed(6)),
+  },
+  ts: Math.floor(Date.now() / 1000),
+  note: 'AI generated test data',
+});
 
 export const AppendEventScreen = () => {
-  const { contract, account } = useWallet();
-  const [batchId, setBatchId] = useState('');
-  const [eventType, setEventType] = useState(EVENT_OPTIONS[0]);
-  const [file, setFile] = useState<File | null>(null);
-  const [status, setStatus] = useState<'idle' | 'uploading' | 'sending'>('idle');
+  const { provider, contract, account } = useWallet();
+  const { effectiveRole } = useAuth();
+  const [batchId, setBatchId] = useState('0x');
+  const [eventType, setEventType] = useState<string>(EVENT_OPTIONS[0]);
+  const [dataJson, setDataJson] = useState(JSON.stringify(buildSampleEvent(), null, 2));
+  const [status, setStatus] = useState<'idle' | 'signing' | 'uploading' | 'sending'>('idle');
   const [result, setResult] = useState<UploadResponse | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
+  const [pendingTx, setPendingTx] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -31,32 +45,63 @@ export const AppendEventScreen = () => {
     setResult(null);
     setTxHash(null);
 
-    if (!contract || !account) {
+    if (!provider || !contract || !account) {
       setError('Connect your wallet first.');
       return;
     }
-    if (!file) {
-      setError('Upload the event JSON first.');
+
+    let parsedData: Record<string, unknown>;
+    try {
+      parsedData = JSON.parse(dataJson);
+    } catch {
+      setError('Event data must be valid JSON.');
+      return;
+    }
+
+    if (!batchId.startsWith('0x')) {
+      setError('Batch ID must be 0x-prefixed (32-byte hex).');
+      return;
+    }
+
+    if (batchId.length !== 66) {
+      setError('Batch ID must be 32 bytes (0x + 64 hex chars).');
       return;
     }
 
     try {
-      setStatus('uploading');
-      const upload = await uploadEventFile({
-        file,
+      setStatus('signing');
+      const signature = await signEventPayload(provider, {
         batchId,
         eventType,
-        actor: account,
+        data: JSON.stringify(parsedData ?? {}),
+      });
+
+      setStatus('uploading');
+      const upload = await uploadSignedEvent({
+        batchId,
+        eventType,
+        data: parsedData,
+        signature,
+        signer: account,
       });
       setResult(upload);
 
       setStatus('sending');
       const tx = await contract.appendEvent(batchId, eventType, upload.cid, upload.saltedHash);
+      setPendingTx(tx.hash);
       const receipt = await tx.wait();
       setTxHash(receipt.hash);
+      await updateEventStatus(upload.cid, 'confirmed', receipt.hash);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
+      if (result?.cid) {
+        try {
+          await updateEventStatus(result.cid, 'failed', pendingTx ?? undefined);
+        } catch {
+          /* ignore secondary error */
+        }
+      }
     } finally {
       setStatus('idle');
     }
@@ -66,13 +111,13 @@ export const AppendEventScreen = () => {
     <form className="screen-card form" onSubmit={onSubmit}>
       <h2>Append Event</h2>
       <p className="screen-description">
-        Custodians upload the latest inspection/logistics report, the backend salts + hashes it, and we commit the salted
-        hash on-chain. Store the salt securely for verification.
+        Custodians sign the payload (EIP-712), the backend salts/stores it (status pending), and the salted hash is
+        appended on-chain. After the tx settles we ping the backend to flip to confirmed/failed.
       </p>
 
       <label>
-        Batch ID
-        <input value={batchId} onChange={(e) => setBatchId(e.target.value)} required placeholder="BATCH-2025-001" />
+        Batch ID (0x + 64 hex)
+        <input value={batchId} onChange={(e) => setBatchId(e.target.value)} required />
       </label>
 
       <label>
@@ -84,31 +129,45 @@ export const AppendEventScreen = () => {
         </select>
       </label>
 
-      <label className="file-picker">
-        Event JSON
-        <input type="file" accept="application/json" onChange={(e) => setFile(e.target.files?.[0] ?? null)} required />
+      <label>
+        Event payload (JSON)
+        <textarea
+          rows={8}
+          value={dataJson}
+          onChange={(e) => setDataJson(e.target.value)}
+          spellCheck={false}
+        />
       </label>
+      <div className="auth-actions">
+        <button
+          className="ghost-button"
+          type="button"
+          onClick={() => setDataJson(JSON.stringify(buildSampleEvent(), null, 2))}
+        >
+          Generate sample event
+        </button>
+      </div>
 
       <button className="primary" type="submit" disabled={status !== 'idle'}>
+        {status === 'signing' && 'Signing...'}
         {status === 'uploading' && 'Uploading...'}
-        {status === 'sending' && 'Sending Tx...'}
+        {status === 'sending' && 'Waiting for tx...'}
         {status === 'idle' && 'Append Event'}
       </button>
 
       {result && (
         <div className="callout">
-          <p>
-            CID <code>{result.cid}</code>
-          </p>
-          <p>SHA-256: {result.sha256}</p>
+          <p>Backend status: {result.status}</p>
+          <p>CID: {result.cid}</p>
           <p>Salted hash (on-chain): {result.saltedHash}</p>
           <p>Salt: {result.salt}</p>
+          <p>Stored at: {result.uri}</p>
         </div>
       )}
 
       {txHash && (
         <p className="success">
-          Tx:{' '}
+          Tx confirmed:{' '}
           <a href={`https://sepolia.etherscan.io/tx/${txHash}`} target="_blank" rel="noreferrer">
             {txHash.slice(0, 12)}...
           </a>
@@ -116,6 +175,7 @@ export const AppendEventScreen = () => {
       )}
 
       {error && <p className="error">{error}</p>}
+      <p className="screen-tips">UI role: {effectiveRole}. Allowed event types follow backend role checks.</p>
     </form>
   );
 };

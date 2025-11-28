@@ -1,4 +1,8 @@
-﻿const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:4000/api';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:4000/api';
+
+const jsonHeaders = {
+  'Content-Type': 'application/json',
+};
 
 const toJson = async (response: Response) => {
   if (!response.ok) {
@@ -8,51 +12,60 @@ const toJson = async (response: Response) => {
   return response.json();
 };
 
-export const uploadEventFile = async (params: {
-  file: File;
+export const createBatchEnvelope = async (params: {
   batchId: string;
-  eventType: string;
-  actor?: string;
+  meta: Record<string, unknown>;
+  signature: string;
+  signer: string;
+  custodian?: string;
 }) => {
-  const form = new FormData();
-  form.append('file', params.file);
-  form.append('batchId', params.batchId);
-  form.append('eventType', params.eventType);
-  if (params.actor) {
-    form.append('actor', params.actor);
-  }
-
-  const res = await fetch(`${BACKEND_URL}/events/upload`, {
+  const res = await fetch(`${BACKEND_URL}/batches/create`, {
     method: 'POST',
-    body: form,
+    headers: jsonHeaders,
+    body: JSON.stringify(params),
   });
-
   return toJson(res);
 };
 
-export const verifyEventFile = async (params: {
-  file: File;
-  expectedHash?: string;
-  expectedSaltedHash?: string;
-  salt?: string;
+export const uploadSignedEvent = async (params: {
+  batchId: string;
+  eventType: string;
+  data: Record<string, unknown>;
+  signature: string;
+  signer: string;
 }) => {
-  const form = new FormData();
-  form.append('file', params.file);
-  if (params.expectedHash) {
-    form.append('expectedHash', params.expectedHash);
-  }
-  if (params.expectedSaltedHash) {
-    form.append('expectedSaltedHash', params.expectedSaltedHash);
-  }
-  if (params.salt) {
-    form.append('salt', params.salt);
-  }
+  const res = await fetch(`${BACKEND_URL}/events/upload`, {
+    method: 'POST',
+    headers: jsonHeaders,
+    body: JSON.stringify(params),
+  });
+  return toJson(res);
+};
 
+export const updateEventStatus = async (cid: string, status: 'confirmed' | 'failed', txHash?: string) => {
+  const res = await fetch(`${BACKEND_URL}/events/${cid}/status`, {
+    method: 'POST',
+    headers: jsonHeaders,
+    body: JSON.stringify({ status, txHash }),
+  });
+  return toJson(res);
+};
+
+export const updateBatchStatus = async (batchId: string, status: 'confirmed' | 'failed', txHash?: string) => {
+  const res = await fetch(`${BACKEND_URL}/batches/${batchId}/status`, {
+    method: 'POST',
+    headers: jsonHeaders,
+    body: JSON.stringify({ status, txHash }),
+  });
+  return toJson(res);
+};
+
+export const verifyStoredEvent = async (batchId: string, cid: string) => {
   const res = await fetch(`${BACKEND_URL}/events/verify`, {
     method: 'POST',
-    body: form,
+    headers: jsonHeaders,
+    body: JSON.stringify({ batchId, cid }),
   });
-
   return toJson(res);
 };
 
@@ -60,14 +73,6 @@ export const fetchStoredEvent = async (batchId: string, cid: string) => {
   const res = await fetch(`${BACKEND_URL}/events/${batchId}/${cid}`);
   if (!res.ok) {
     throw new Error('Unable to download stored JSON');
-  }
-  return res.json();
-};
-
-export const fetchEventMetadata = async (batchId: string, cid: string) => {
-  const res = await fetch(`${BACKEND_URL}/events/${batchId}/${cid}/meta`);
-  if (!res.ok) {
-    throw new Error('Unable to download metadata');
   }
   return res.json();
 };

@@ -1,6 +1,6 @@
-﻿import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useWallet } from '../../context/walletContext';
-import { fetchStoredEvent, fetchEventMetadata } from '../../lib/api';
+import { fetchStoredEvent, verifyStoredEvent } from '../../lib/api';
 import { formatTimestamp } from '../../lib/format';
 
 interface BatchSummary {
@@ -22,11 +22,11 @@ interface EventRecord {
 
 interface EventMetadata {
   batchId: string;
-  cid: string;
   sha256: string;
   saltedHash: string;
   salt: string;
-  createdAt: string;
+  signer?: string;
+  createdAt?: string | number;
 }
 
 export const ViewerScreen = () => {
@@ -39,6 +39,7 @@ export const ViewerScreen = () => {
   const [downloadedCid, setDownloadedCid] = useState<string | null>(null);
   const [downloadedJson, setDownloadedJson] = useState<string>('');
   const [downloadedMeta, setDownloadedMeta] = useState<EventMetadata | null>(null);
+  const [verification, setVerification] = useState<{ ok: boolean; match?: boolean } | null>(null);
 
   const onSearch = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -65,10 +66,24 @@ export const ViewerScreen = () => {
   const handleDownload = async (cid: string) => {
     try {
       const json = await fetchStoredEvent(batchId, cid);
-      const metadata = await fetchEventMetadata(batchId, cid);
+      const envelope = (json as any).envelope;
+      const metadata: EventMetadata | null = envelope
+        ? {
+            batchId: envelope.payload?.batchId,
+            sha256: envelope.sha256,
+            saltedHash: envelope.sha256,
+            salt: envelope.salt,
+            signer: envelope.signer,
+            createdAt: envelope.createdAt,
+          }
+        : null;
+
+      const verificationResult = await verifyStoredEvent(batchId, cid);
+
       setDownloadedCid(cid);
       setDownloadedJson(JSON.stringify(json, null, 2));
       setDownloadedMeta(metadata);
+      setVerification(verificationResult);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
@@ -131,7 +146,13 @@ export const ViewerScreen = () => {
               <p>Raw SHA-256: {downloadedMeta.sha256}</p>
               <p>Salted hash: {downloadedMeta.saltedHash}</p>
               <p>Salt: {downloadedMeta.salt}</p>
+              {downloadedMeta.signer && <p>Signer: {downloadedMeta.signer}</p>}
             </>
+          )}
+          {verification && (
+            <p className={verification.match ? 'success' : 'error'}>
+              Backend re-hash match: {verification.match ? 'Yes' : 'No'}
+            </p>
           )}
           <pre>{downloadedJson}</pre>
         </div>
