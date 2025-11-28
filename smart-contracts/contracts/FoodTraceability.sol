@@ -5,7 +5,6 @@ import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
 
 contract FoodTraceability is Ownable {
     enum Role {
-        None,
         Producer,
         Transporter,
         Retailer,
@@ -31,8 +30,10 @@ contract FoodTraceability is Ownable {
     }
 
     mapping(address => Role) public roles;
+    mapping(address => bool) public registered;
+    mapping(address => bool) public admins;
     mapping(bytes32 => Batch) private batches;
-    mapping(bytes32 => EventRecord[]) private batchEvents;
+    mapping(bytes32 => EventRecord[]) private _batchEvents;
     uint256 public totalBatches;
 
     event RoleUpdated(address indexed account, Role role);
@@ -63,9 +64,42 @@ contract FoodTraceability is Ownable {
 
     constructor(address owner_) Ownable(owner_) {}
 
-    function setRole(address account, Role role) external onlyOwner {
+    function setRole(address account, Role role) external onlyAdmin {
         roles[account] = role;
+        registered[account] = true;
         emit RoleUpdated(account, role);
+    }
+
+    function registerParticipant(address user, uint8 role) external onlyAdmin {
+        require(role <= uint8(Role.Regulator), "invalid role");
+        roles[user] = Role(role);
+        registered[user] = true;
+        emit RoleUpdated(user, Role(role));
+    }
+
+    function disableParticipant(address user) external onlyAdmin {
+        registered[user] = false;
+    }
+
+    function participants(address addr) external view returns (bool enabled, uint8 role) {
+        return (registered[addr], uint8(roles[addr]));
+    }
+
+    function addAdmin(address newAdmin) external onlyOwner {
+        require(newAdmin != address(0), "invalid address");
+        admins[newAdmin] = true;
+    }
+
+    function removeAdmin(address admin) external onlyOwner {
+        admins[admin] = false;
+    }
+
+    function getOwner() external view returns (address) {
+        return owner();
+    }
+
+    function transferOwner(address newOwner) external onlyOwner {
+        transferOwnership(newOwner);
     }
 
     // Create a new batch
@@ -134,7 +168,7 @@ contract FoodTraceability is Ownable {
         bytes32 key = _requireBatch(batchId);
         Batch storage batch = batches[key];
         summary = batch;
-        events = batchEvents[key];
+        events = _batchEvents[key];
     }
 
     function getEvent(string calldata batchId, uint256 index)
@@ -143,8 +177,8 @@ contract FoodTraceability is Ownable {
         returns (EventRecord memory)
     {
         bytes32 key = _requireBatch(batchId);
-        require(index < batchEvents[key].length, 'index out of bounds');
-        return batchEvents[key][index];
+        require(index < _batchEvents[key].length, 'index out of bounds');
+        return _batchEvents[key][index];
     }
 
     function getRole(address account) external view returns (Role) {
@@ -165,6 +199,11 @@ contract FoodTraceability is Ownable {
         return totalBatches;
     }
 
+    function batchEvents(bytes32 batchId, uint256 index) external view returns (bytes32) {
+        require(index < _batchEvents[batchId].length, "index out of bounds");
+        return _batchEvents[batchId][index].dataHash;
+    }
+
     
 
     // -------------------------------------------
@@ -181,6 +220,38 @@ contract FoodTraceability is Ownable {
         require(_canWriteBatch(batch, msg.sender), 'not allowed');
         _recordEvent(key, eventType, cid, dataHash);
         emit EventAppended(batchId, msg.sender, eventType, cid, dataHash);
+    }
+
+    function appendEvent(
+        bytes32 batchId,
+        uint8 eventType,
+        bytes32 eventHash
+    ) external {
+        // This function assumes the caller has already verified the event details off-chain
+        // and is just recording the hash.
+        // It uses the bytes32 batchId directly.
+        // We need to verify the batch exists.
+        require(batches[batchId].exists, "batch missing");
+        
+        // Check permissions - similar to _canWriteBatch but using batchId key directly
+        Batch storage batch = batches[batchId];
+        require(batch.state == BatchState.Active, 'batch not active');
+        require(_canWriteBatch(batch, msg.sender), 'not allowed');
+
+        // Map uint8 eventType to string
+        string memory eventTypeStr;
+        if (eventType == 0) eventTypeStr = "Create";
+        else if (eventType == 1) eventTypeStr = "Transport";
+        else if (eventType == 2) eventTypeStr = "Inspect";
+        else eventTypeStr = "Unknown";
+
+        _recordEvent(batchId, eventTypeStr, "", eventHash);
+        // We don't have the string batchId here to emit the original event...
+        // But the original event uses string batchId.
+        // The README says: "Records a salted event hash for a batch."
+        // The original `appendEvent` emits `EventAppended` with string batchId.
+        // If we only have bytes32 batchId, we can't emit the string batchId unless we store it in the Batch struct (which we do).
+        emit EventAppended(batch.batchId, msg.sender, eventTypeStr, "", eventHash);
     }
 
     function transferCustody(string calldata batchId, address newCustodian)
@@ -220,7 +291,7 @@ contract FoodTraceability is Ownable {
         string memory cid,
         bytes32 dataHash
     ) internal {
-        batchEvents[key].push(
+        _batchEvents[key].push(
             EventRecord({
                 eventType: eventType,
                 actor: msg.sender,
@@ -262,6 +333,11 @@ contract FoodTraceability is Ownable {
     modifier onlyCustodian(string calldata batchId) {
         bytes32 key = _requireBatch(batchId);
         require(batches[key].currentCustodian == msg.sender, 'not custodian');
+        _;
+    }
+
+    modifier onlyAdmin() {
+        require(owner() == msg.sender || admins[msg.sender], "admin required");
         _;
     }
 }

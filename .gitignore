@@ -38,3 +38,7 @@ frontend/dist/
 CS595 Project Proposal – Blockchains and their Applications.txt
 FrontEnd_Guide_and_Prompt.txt
 progress-notes.txt
+ABI/build-info/4f5a2d1ad06738b73a784093732761f1.json
+.deps/npm/@openzeppelin/contracts/access/Ownable.sol
+.deps/npm/@openzeppelin/contracts/utils/Context.sol
+/ABI
