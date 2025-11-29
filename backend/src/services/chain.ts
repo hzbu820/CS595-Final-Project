@@ -4,10 +4,11 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
-// Resolve artifacts path relative to this file (works in ESM and Docker)
+// Resolve ABI path relative to this file (works in ESM and Docker)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const abiPath = path.resolve(__dirname, "../../../frontend/src/abi/FoodTrace.json");
+// backend/ABI/FoodTraceability.json (Hardhat artifact)
+const abiPath = path.resolve(__dirname, "../../ABI/FoodTraceability.json");
 const abiRaw = readFileSync(abiPath, "utf8").replace(/^\uFEFF/, "");
 const abiJson = JSON.parse(abiRaw);
 const abi = (Array.isArray(abiJson) ? abiJson : abiJson.abi) as InterfaceAbi;
