@@ -44,7 +44,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [contract, setContract] = useState<Contract | null>(null);
   const [account, setAccount] = useState<string>();
   const [chainId, setChainId] = useState<number>();
-  const [role, setRole] = useState<string>(getRoleLabel(0));
+  const [role, setRole] = useState<string>(getRoleLabel(-1));
   const [isAdmin, setIsAdmin] = useState(false);
   const [needsNetworkSwitch, setNeedsNetworkSwitch] = useState(false);
   const [status, setStatus] = useState<WalletStatus>('idle');
@@ -53,15 +53,19 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
   const resetState = useCallback(() => {
     setContract(null);
-    setRole(getRoleLabel(0));
+    setRole(getRoleLabel(-1));
     setIsAdmin(false);
   }, []);
 
   const hydrateRole = useCallback(
     async (nextContract: Contract, walletAddress: string) => {
       try {
-        const roleValue = await nextContract.roles(walletAddress);
-        setRole(getRoleLabel(roleValue));
+        const [isEnabled, roleVal] = await nextContract.participants(walletAddress);
+        if (isEnabled) {
+          setRole(getRoleLabel(roleVal));
+        } else {
+          setRole(getRoleLabel(-1));
+        }
 
         // Check if owner
         const owner = await nextContract.owner();
