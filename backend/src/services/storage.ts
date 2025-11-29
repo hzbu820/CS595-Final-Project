@@ -49,10 +49,10 @@ export const persistEventFile = async (buffer: Buffer, batchId: string): Promise
 
   const hash = sha256Hex(buffer);
   const cid = `${crypto.randomUUID()}.json`;
-  const objectPath = `${batchId}/${cid}`;
+  const docId = `${batchId}__${cid}`;
   const db = getDb();
 
-  await db.collection("eventBlobs").doc(objectPath).set({
+  await db.collection("eventBlobs").doc(docId).set({
     batchId,
     cid,
     blob: buffer.toString("utf8"),
@@ -60,7 +60,7 @@ export const persistEventFile = async (buffer: Buffer, batchId: string): Promise
     createdAt: Date.now(),
   });
 
-  const filePath = `firestore://eventBlobs/${objectPath}`;
+  const filePath = `firestore://eventBlobs/${docId}`;
   return { cid, sha256: hash, size: buffer.length, filePath };
 };
 
@@ -85,14 +85,14 @@ export const readStoredEvent = async (batchId: string, cid: string) => {
   if (!BATCH_ID_RE.test(batchId)) throw new Error("Invalid batchId");
   if (!CID_RE.test(cid)) throw new Error("Invalid cid");
 
-  const objectPath = `${batchId}/${cid}`;
+  const docId = `${batchId}__${cid}`;
   const db = getDb();
-  const snap = await db.collection("eventBlobs").doc(objectPath).get();
+  const snap = await db.collection("eventBlobs").doc(docId).get();
   if (!snap.exists) throw new Error("Stored event not found");
   const blob = snap.get("blob") as string | undefined;
   if (!blob) throw new Error("Stored event blob missing");
   const buf = Buffer.from(blob, "utf8");
-  const filePath = `firestore://eventBlobs/${objectPath}`;
+  const filePath = `firestore://eventBlobs/${docId}`;
 
   return { buffer: buf, text: buf.toString("utf8"), filePath };
 };
