@@ -76,3 +76,12 @@ export const fetchStoredEvent = async (batchId: string, cid: string) => {
   }
   return res.json();
 };
+
+export const linkEmailToWallet = async (params: { address: string; email: string; signature: string }) => {
+  const res = await fetch(`${BACKEND_URL}/auth/link-email`, {
+    method: 'POST',
+    headers: jsonHeaders,
+    body: JSON.stringify(params),
+  });
+  return toJson(res);
+};

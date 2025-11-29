@@ -12,16 +12,16 @@ Role-aware dashboard for the FoodTraceability contract + Express backend. MetaMa
 cd frontend
 cp .env.example .env   # fill values below
 npm install
-npm run dev            
+npm run dev
 ```
 
 ## Environment variables
 ```
 VITE_BACKEND_URL=http://localhost:4000/api   # your backend base URL
-VITE_CONTRACT_ADDRESS=0x4382a00d63e5ddf23652a70dbab49279ee2a206   # Sepolia deployment from Etherscan
+VITE_CONTRACT_ADDRESS=0x4382a00d63e5ddf23652a70d4bab49279ee2a206   # Sepolia deployment from Etherscan
 VITE_CHAIN_ID=11155111                        # Sepolia
 
-# Optional Firebase (for shared login/role storage). Leave blank to use local fallback.
+# Optional Firebase (legacy; not required with wallet-first auth). Leave blank to use local fallback.
 VITE_FIREBASE_API_KEY=
 VITE_FIREBASE_AUTH_DOMAIN=
 VITE_FIREBASE_PROJECT_ID=
@@ -31,16 +31,17 @@ VITE_FIREBASE_APP_ID=
 ```
 
 ## Auth & roles
-- UI role is selectable in the Login tab (local fallback if Firebase is not configured). The "Load Demo User" button uses `demo@trace.local / password123` and sets the UI role to Transporter.
-- On-chain role is fetched from the contract (`roles(address)`), shown in the Wallet panel. This is authoritative for what the contract enforces.
-- Current limitation: changing the UI role is unrestricted; to enforce role changes, back it with Firebase or the backend/contract admin flow.
+- Wallet connection is required for on-chain actions. On-chain role (from `roles(address)`) is authoritative.
+- Login/Profile tab stores an email locally or links it to the backend via wallet signature; it does not grant permissions.
+- Tabs are gated by on-chain role; email does not affect access.
 
 ## Screens
-- **Login / Profile** — UI role selection, demo user loader, optional Firebase sign-in.
+- **Login / Profile** — Set a local email profile and connect wallet; on-chain role enforced by the contract.
 - **Create Batch (Producer)** — EIP-712 sign payload → POST `/batches/create` (salted hash) → MetaMask `createBatch` → POST `/batches/:batchId/status`.
 - **Append Event (Producer/Transporter/Regulator)** — EIP-712 sign payload → POST `/events/upload` → MetaMask `appendEvent` → POST `/events/:cid/status`.
 - **Transfer Custody** — Calls `transferCustody`.
 - **Recall (Regulator)** — Calls `setRecall`.
+- **Inspector (Regulator)** — Load batch, auto-flag anomalies (temperature threshold) from stored events, and trigger recall with a reason.
 - **Verify Hashes** — Ask backend to recompute salted hash by batchId + CID; optional local SHA-256 of a JSON file.
 - **Viewer** — `getBatchSummary` + timeline; fetch stored JSON/envelope; shows recompute status.
 - **QR Connect** — Generate/scan QR payloads (batchId/CID/saltedHash) for mobile handoff.
@@ -54,11 +55,11 @@ VITE_FIREBASE_APP_ID=
 ```bash
 cd ../smart-contracts
 npx hardhat compile
-# copy artifacts/contracts/FoodTraceability.sol/FoodTraceability.json -> frontend/src/abi/FoodTrace.json (abi array only)
+# copy artifacts/contracts/FoodTraceability.sol/FoodTrace.json -> frontend/src/abi/FoodTrace.json (abi array only)
 ```
 `src/abi/foodTrace.ts` re-exports `FoodTrace.json`, so copying keeps the UI synced.
 
 ## Notes based on teammate feedback
 - On-chain role display comes from the Sepolia contract; connect MetaMask to fetch it.
-- Firebase visibility depends on supplying Firebase keys in `.env`; without them, auth uses local storage only (nothing will appear in Firebase).
-- UI role switching is intentionally lenient for demos; real enforcement should happen via contract roles + backend admin flows.
+- Email/profile is local-only; permissions are enforced by contract roles/admin backend flows.
+- Firebase is optional/legacy; wallet-first auth is recommended.

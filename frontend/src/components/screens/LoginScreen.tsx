@@ -1,24 +1,19 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { useAuth, type FrontendRole } from '../../context/authContext';
+import { useAuth } from '../../context/authContext';
 import { useWallet } from '../../context/walletContext';
 import { shortAddress } from '../../lib/ethereum';
-
-const ROLE_OPTIONS: FrontendRole[] = ['Producer', 'Transporter', 'Retailer', 'Regulator', 'Viewer'];
+import { linkEmailToWallet } from '../../lib/api';
 
 export const LoginScreen = () => {
-  const { user, status, error, login, logout, updateRole } = useAuth();
-  const { account, role: walletRole, hasProvider, connect } = useWallet();
+  const { user, status, error, login, logout } = useAuth();
+  const { account, role: walletRole, hasProvider, connect, provider } = useWallet();
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [role, setRole] = useState<FrontendRole>('Viewer');
   const [message, setMessage] = useState<string | null>(null);
+  const [linking, setLinking] = useState(false);
 
   useEffect(() => {
     if (user?.email) {
       setEmail(user.email);
-    }
-    if (user?.role) {
-      setRole(user.role);
     }
   }, [user]);
 
@@ -26,25 +21,36 @@ export const LoginScreen = () => {
     event.preventDefault();
     setMessage(null);
     try {
-      await login({ email, password, role });
-      setMessage('Signed in successfully.');
+      await login({ email });
+      setMessage('Profile saved locally. On-chain role is enforced by the contract.');
     } catch {
       /* error handled in context */
     }
   };
 
-  const applyDemoUser = () => {
-    setEmail('demo@trace.local');
-    setPassword('password123');
-    setRole('Transporter');
-    setMessage('Loaded demo credentials. Click Login to continue.');
-  };
-
-  const onRoleChange = async (next: FrontendRole) => {
-    setRole(next);
-    if (user) {
-      await updateRole(next);
-      setMessage(`Updated role to ${next}.`);
+  const onLinkEmail = async () => {
+    if (!account || !provider) {
+      setMessage('Connect wallet before linking email.');
+      return;
+    }
+    if (!email) {
+      setMessage('Enter an email to link.');
+      return;
+    }
+    setLinking(true);
+    setMessage(null);
+    try {
+      const normalizedAddress = account.toLowerCase();
+      const messageToSign = `Link email ${email} to ${normalizedAddress} for FoodTrace`;
+      const signer = await provider.getSigner();
+      const signature = await signer.signMessage(messageToSign);
+      await linkEmailToWallet({ address: normalizedAddress, email, signature });
+      setMessage('Email linked to wallet via backend.');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setMessage(`Link failed: ${msg}`);
+    } finally {
+      setLinking(false);
     }
   };
 
@@ -52,8 +58,8 @@ export const LoginScreen = () => {
     <div className="screen-card form">
       <h2>Account Login</h2>
       <p className="screen-description">
-        Frontend users authenticate (Firebase or local fallback), pick their UX role, and optionally link the connected
-        wallet for on-chain actions. Use the same email/password to rehydrate your role across sessions.
+        Link your wallet for on-chain actions. Email is optional and stored locally/back-end for profile/notifications;
+        the contract role is authoritative for access.
       </p>
 
       <form onSubmit={onSubmit} className="form-grid">
@@ -61,25 +67,21 @@ export const LoginScreen = () => {
           Email
           <input value={email} onChange={(e) => setEmail(e.target.value)} required type="email" />
         </label>
-        <label>
-          Password
-          <input value={password} onChange={(e) => setPassword(e.target.value)} required type="password" />
-        </label>
-        <label>
-          Role (UI scope)
-          <select value={role} onChange={(e) => onRoleChange(e.target.value as FrontendRole)}>
-            {ROLE_OPTIONS.map((option) => (
-              <option key={option}>{option}</option>
-            ))}
-          </select>
-        </label>
+
+        <div className="auth-actions">
+          <button
+            className="ghost-button"
+            type="button"
+            onClick={onLinkEmail}
+            disabled={linking || !account || status === 'loading'}
+          >
+            {linking ? 'Linking…' : 'Link Email to Wallet'}
+          </button>
+        </div>
 
         <div className="auth-actions">
           <button className="primary" type="submit" disabled={status === 'loading'}>
-            {status === 'loading' ? 'Working...' : user ? 'Update Profile' : 'Login'}
-          </button>
-          <button className="ghost-button" type="button" onClick={applyDemoUser}>
-            Load Demo User
+            {status === 'loading' ? 'Working...' : user ? 'Update Profile' : 'Save Profile'}
           </button>
           {user && (
             <button className="ghost-button" type="button" onClick={logout} disabled={status === 'loading'}>
@@ -97,7 +99,7 @@ export const LoginScreen = () => {
           </button>
         )}
         <p>On-chain role: {walletRole}</p>
-        <p>Frontend role: {user?.role ?? 'Viewer'}</p>
+        <p>Frontend profile email: {user?.email ?? 'Not set'}</p>
       </div>
 
       {message && <p className="success">{message}</p>}

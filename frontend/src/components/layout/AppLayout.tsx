@@ -10,6 +10,7 @@ import { ViewerScreen } from '../screens/ViewerScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import { QrHubScreen } from '../screens/QrHubScreen';
 import { UserPanel } from './UserPanel';
+import { InspectorScreen } from '../screens/InspectorScreen';
 import { useAuth, type FrontendRole } from '../../context/authContext';
 import { useWallet } from '../../context/walletContext';
 
@@ -27,6 +28,7 @@ const tabs: TabConfig[] = [
   { id: 'append', label: 'Append Event', roles: ['Producer', 'Transporter', 'Retailer', 'Regulator'], component: <AppendEventScreen /> },
   { id: 'transfer', label: 'Transfer Custody', roles: ['Producer', 'Transporter', 'Retailer'], component: <TransferCustodyScreen /> },
   { id: 'recall', label: 'Recall', roles: ['Regulator'], component: <RecallScreen /> },
+  { id: 'inspect', label: 'Inspector', roles: ['Regulator'], component: <InspectorScreen /> },
   { id: 'verify', label: 'Verify Hashes', roles: ['Producer', 'Transporter', 'Retailer', 'Regulator', 'Viewer', 'Unregistered'], component: <VerifyScreen /> },
   { id: 'viewer', label: 'Viewer', roles: ['Producer', 'Transporter', 'Retailer', 'Regulator', 'Viewer', 'Unregistered'], component: <ViewerScreen /> },
   { id: 'qr', label: 'QR Connect', roles: ['Producer', 'Transporter', 'Retailer', 'Regulator', 'Viewer', 'Unregistered'], component: <QrHubScreen /> },
@@ -62,7 +64,10 @@ export const AppLayout = () => {
     return found?.component ?? allowedTabs[0]?.component ?? null;
   }, [activeTab, allowedTabs]);
 
-  const openLoginTab = () => setActiveTab('login');
+  const openLoginTab = () => {
+    setActiveTab('login');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <div className="app-layout">
