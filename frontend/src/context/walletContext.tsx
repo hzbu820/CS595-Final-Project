@@ -29,6 +29,7 @@ interface WalletContextValue {
   account?: string;
   chainId?: number;
   role: string;
+  isAdmin: boolean;
   status: WalletStatus;
   error?: string | null;
   needsNetworkSwitch: boolean;
@@ -44,6 +45,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [account, setAccount] = useState<string>();
   const [chainId, setChainId] = useState<number>();
   const [role, setRole] = useState<string>(getRoleLabel(0));
+  const [isAdmin, setIsAdmin] = useState(false);
   const [needsNetworkSwitch, setNeedsNetworkSwitch] = useState(false);
   const [status, setStatus] = useState<WalletStatus>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +54,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const resetState = useCallback(() => {
     setContract(null);
     setRole(getRoleLabel(0));
+    setIsAdmin(false);
   }, []);
 
   const hydrateRole = useCallback(
@@ -59,6 +62,11 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       try {
         const roleValue = await nextContract.roles(walletAddress);
         setRole(getRoleLabel(roleValue));
+
+        // Check if owner
+        const owner = await nextContract.owner();
+        const isOwner = owner.toLowerCase() === walletAddress.toLowerCase();
+        setIsAdmin(isOwner);
       } catch (err) {
         console.error('Failed to fetch role', err);
       }
@@ -184,6 +192,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     account,
     chainId,
     role,
+    isAdmin,
     status,
     error,
     needsNetworkSwitch,
@@ -196,6 +205,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     account,
     chainId,
     role,
+    isAdmin,
     status,
     error,
     needsNetworkSwitch,

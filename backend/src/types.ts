@@ -1,4 +1,4 @@
-export type EventType = "Create"|"Transport"|"Inspect";
+export type EventType = "Create" | "Transport" | "Inspect" | "Temperature";
 
 export interface EventPayload {
   batchId: `0x${string}`;
@@ -22,17 +22,18 @@ export interface EventEnvelope {
   createdAt: number;               // unix seconds
 }
 
-// mirror Solidity roles (contract Role enum is 1..4; 0 = unused)
+// mirror Solidity roles (contract Role enum is 0..3)
 export enum RoleId {
-  Producer = 1,
-  Transporter = 2,
-  Retailer = 3,
-  Regulator = 4,
+  Producer = 0,
+  Transporter = 1,
+  Retailer = 2,
+  Regulator = 3,
 }
 
 // which roles are allowed for each eventType
 export const AllowedRoles: Record<EventType, number[]> = {
-  Create:    [RoleId.Producer],                           // aligns with contract onlyRole(Producer)
+  Create: [RoleId.Producer],                           // aligns with contract onlyRole(Producer)
   Transport: [RoleId.Producer, RoleId.Transporter],       // moving through the chain
-  Inspect:   [RoleId.Regulator],                          // inspections performed by regulators
+  Inspect: [RoleId.Regulator],                          // inspections performed by regulators
+  Temperature: [RoleId.Producer, RoleId.Transporter, RoleId.Retailer],
 };

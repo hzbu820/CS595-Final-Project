@@ -11,6 +11,8 @@ import { LoginScreen } from '../screens/LoginScreen';
 import { QrHubScreen } from '../screens/QrHubScreen';
 import { UserPanel } from './UserPanel';
 import { InspectorScreen } from '../screens/InspectorScreen';
+import { AdminScreen } from '../screens/AdminScreen';
+import { SystemTestScreen } from '../screens/SystemTestScreen';
 import { useAuth, type FrontendRole } from '../../context/authContext';
 import { useWallet } from '../../context/walletContext';
 
@@ -24,6 +26,8 @@ type TabConfig = {
 
 const tabs: TabConfig[] = [
   { id: 'login', label: 'Login / Profile', roles: ['Unregistered', 'Viewer', 'Producer', 'Transporter', 'Retailer', 'Regulator'], component: <LoginScreen /> },
+  { id: 'admin', label: 'Admin', roles: ['Unregistered'], component: <AdminScreen /> },
+  { id: 'test', label: 'System Test', roles: ['Unregistered'], component: <SystemTestScreen /> },
   { id: 'create', label: 'Create Batch', roles: ['Producer'], component: <CreateBatchScreen /> },
   { id: 'append', label: 'Append Event', roles: ['Producer', 'Transporter', 'Retailer', 'Regulator'], component: <AppendEventScreen /> },
   { id: 'transfer', label: 'Transfer Custody', roles: ['Producer', 'Transporter', 'Retailer'], component: <TransferCustodyScreen /> },
@@ -36,7 +40,7 @@ const tabs: TabConfig[] = [
 
 export const AppLayout = () => {
   const { effectiveRole, user } = useAuth();
-  const { role: walletRole } = useWallet();
+  const { role: walletRole, isAdmin } = useWallet();
   const [activeTab, setActiveTab] = useState<string>('login');
 
   const roleSet = useMemo(() => {
@@ -48,8 +52,12 @@ export const AppLayout = () => {
   }, [effectiveRole, walletRole, user]);
 
   const allowedTabs = useMemo(
-    () => tabs.filter((tab) => tab.roles.some((role) => roleSet.has(role))),
-    [roleSet],
+    () => {
+      // Admins see all tabs for demo purposes
+      if (isAdmin) return tabs;
+      return tabs.filter((tab) => tab.roles.some((role) => roleSet.has(role)));
+    },
+    [roleSet, isAdmin],
   );
 
   useEffect(() => {

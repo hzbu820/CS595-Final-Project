@@ -17,7 +17,7 @@ const normalize = (value: any): any => {
 
 export const canonicalStringify = (value: unknown) => JSON.stringify(normalize(value));
 
-const typedDomain: TypedDataDomain = { name: 'FoodTrace', version: '1', chainId: 0 };
+const typedDomain: TypedDataDomain = { name: 'FoodTrace', version: '1', chainId: 11155111 };
 const typedFields: Record<string, TypedDataField[]> = {
   EventPayload: [
     { name: 'batchId', type: 'bytes32' },
