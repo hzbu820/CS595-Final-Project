@@ -276,6 +276,102 @@ The backend’s signer must be the admin (ORACLE_PK private key).
 
 After registration, the participant can start calling /api/events/upload.
 
+
+### POST `/api/auth/register-email`
+
+Simple email/password registration backed by Firestore. This is used for frontend UX accounts; authorization for events remains wallet + on-chain role based.
+
+Request
+```json
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+
+Response 200 OK
+```json
+{
+  "ok": true,
+  "email": "user@example.com"
+}
+```
+
+Errors
+
+* 400 – missing/invalid email or password (min length 6)
+* 409 – email already registered
+
+
+### POST `/api/auth/login-email`
+
+Verify email/password against stored hash and return a lightweight profile. The frontend can cache this in localStorage; the backend still performs critical checks using wallet signatures and on-chain roles.
+
+Request
+```json
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+
+Response 200 OK
+```json
+{
+  "ok": true,
+  "email": "user@example.com",
+  "wallet": "0xabc...123",    // may be null if not linked
+  "role": "Viewer"
+}
+```
+
+Errors
+
+* 400 – missing/invalid email/password
+* 401 – invalid credentials
+
+
+### POST `/api/auth/link-email`
+
+Bind an email address to a specific wallet address using a simple EIP-191 signature. This is used to attach contact/profile data to an on-chain participant; authorization for events is still based on the wallet address and its on-chain role.
+
+Request
+```json
+{
+  "address": "0x<wallet-address>",
+  "email": "user@example.com",
+  "signature": "0x<signature-of-message>"
+}
+```
+
+The signature MUST be produced by signing the UTF-8 string:
+
+```text
+Link email <email> to <address-lowered> for FoodTrace
+```
+
+For example, if:
+
+- `address = 0xAbCd...1234`
+- `email = user@example.com`
+
+Then the message to sign (using `signMessage`) is:
+
+```text
+Link email user@example.com to 0xabcd...1234 for FoodTrace
+```
+
+Response 200 OK
+```json
+{
+  "ok": true,
+  "address": "0xabcd...1234",
+  "email": "user@example.com"
+}
+```
+
+Backend stores this mapping in Firestore under `users/{address}` with `email` and `wallet` fields. Frontend can use this to display profile info; event authorization remains wallet + on-chain role based.
+
 ### GET `/api/participants/:address/role`
 
 Returns the registered role of a given participant.

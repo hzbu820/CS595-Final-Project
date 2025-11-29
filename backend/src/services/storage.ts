@@ -19,7 +19,7 @@ const getFirebaseApp = () => {
   return admin.initializeApp({ credential });
 };
 
-const getDb = () => getFirestore(getFirebaseApp());
+export const getDb = () => getFirestore(getFirebaseApp());
 
 interface PersistResult {
   cid: string;
