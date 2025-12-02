@@ -1,6 +1,7 @@
 import { verifyTypedData, TypedDataDomain, TypedDataField } from "ethers";
 
-const domain: TypedDataDomain = { name: "FoodTrace", version: "1", chainId: 11155111n }; // Match frontend chainId
+const chainId = process.env.CHAIN_ID ? BigInt(process.env.CHAIN_ID) : 11155111n;
+const domain: TypedDataDomain = { name: "FoodTrace", version: "1", chainId }; // Match frontend chainId
 const types: Record<string, TypedDataField[]> = {
   EventPayload: [
     { name: "batchId", type: "bytes32" },

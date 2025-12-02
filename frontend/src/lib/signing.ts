@@ -1,23 +1,7 @@
 import { BrowserProvider, type TypedDataDomain, type TypedDataField } from 'ethers';
+import { TARGET_CHAIN_ID } from './ethereum';
 
-const normalize = (value: any): any => {
-  if (Array.isArray(value)) {
-    return value.map(normalize);
-  }
-  if (value && typeof value === 'object') {
-    return Object.keys(value)
-      .sort()
-      .reduce((acc, key) => {
-        acc[key] = normalize(value[key]);
-        return acc;
-      }, {} as Record<string, any>);
-  }
-  return value;
-};
-
-export const canonicalStringify = (value: unknown) => JSON.stringify(normalize(value));
-
-const typedDomain: TypedDataDomain = { name: 'FoodTrace', version: '1', chainId: 11155111 };
+const typedDomain: TypedDataDomain = { name: 'FoodTrace', version: '1', chainId: TARGET_CHAIN_ID };
 const typedFields: Record<string, TypedDataField[]> = {
   EventPayload: [
     { name: 'batchId', type: 'bytes32' },
