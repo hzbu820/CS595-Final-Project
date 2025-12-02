@@ -1,126 +1,126 @@
-# Front-End (React + Vite)
+# Blockchain-Based Food Traceability System (Frontend)
 
-Role-aware dashboard for the FoodTraceability contract + Express backend. MetaMask drives on-chain calls; the backend salts/hashes JSON payloads and tracks pending/confirmed status.
+A React + Vite application for tracking food batches from "Farm to Fork" using Ethereum smart contracts. This frontend interacts with the `FoodTraceability` smart contract and a backend API to ensure data integrity, transparency, and role-based access control.
 
-## Prereqs
-- Node.js 20+
-- MetaMask on Sepolia (or point to a local chain)
-- Backend running: `cd ../backend && npm install && npm run dev`
+## Key Features
+*   **Role-Based Access:** Distinct interfaces for Producers, Transporters, Retailers, Regulators, and Consumers.
+*   **Data Integrity:** Uses EIP-712 signatures and SHA-256 hashing (with salt) to secure off-chain data.
+*   **Privacy:** Sensitive data (like exact location) is stored off-chain; only the hash is on-chain.
+*   **QR Code Integration:** Generate and scan QR codes for easy batch tracking.
+*   **Automated System Test:** Built-in "System Test" tab to simulate a full supply chain lifecycle in one click.
+*   **Recall Mechanism:** Regulators can instantly flag unsafe batches.
 
-## Setup
-```bash
-cd frontend
-cp .env.example .env   # fill values below
-npm install
-npm run dev
-```
+## Prerequisites
+*   **Node.js:** v18+
+*   **MetaMask:** Browser extension installed.
+*   **Backend:** Must be running (see `../backend/README.md`).
+*   **Blockchain:** Sepolia Testnet (or local Hardhat node).
 
-## Environment variables
-```
-VITE_BACKEND_URL=http://localhost:4000/api   # your backend base URL
-VITE_CONTRACT_ADDRESS=0x4382a00d63e5ddf23652a70d4bab49279ee2a206   # Sepolia deployment from Etherscan
-VITE_CHAIN_ID=11155111                        # Sepolia
+## Setup & Installation
 
-# Optional Firebase (legacy; not required with wallet-first auth). Leave blank to use local fallback.
-VITE_FIREBASE_API_KEY=
-VITE_FIREBASE_AUTH_DOMAIN=
-VITE_FIREBASE_PROJECT_ID=
-VITE_FIREBASE_STORAGE_BUCKET=
-VITE_FIREBASE_MESSAGING_SENDER_ID=
-VITE_FIREBASE_APP_ID=
-```
+1.  **Navigate to frontend:**
+    ```bash
+    cd frontend
+    ```
 
-## Auth & roles
-- Wallet connection is required for on-chain actions. On-chain role (from `roles(address)`) is authoritative.
-- Login/Profile tab stores an email locally or links it to the backend via wallet signature; it does not grant permissions.
-- Tabs are gated by on-chain role; email does not affect access.
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
 
-## Screens
-- **Login / Profile** — Set a local email profile and connect wallet; on-chain role enforced by the contract.
-- **Create Batch (Producer)** — EIP-712 sign payload → POST `/batches/create` (salted hash) → MetaMask `createBatch` → POST `/batches/:batchId/status`.
-- **Append Event (Producer/Transporter/Regulator)** — EIP-712 sign payload → POST `/events/upload` → MetaMask `appendEvent` → POST `/events/:cid/status`.
-- **Transfer Custody** — Calls `transferCustody`.
-- **Recall (Regulator)** — Calls `setRecall`.
-- **Inspector (Regulator)** — Load batch, auto-flag anomalies (temperature threshold) from stored events, and trigger recall with a reason.
-- **Verify Hashes** — Ask backend to recompute salted hash by batchId + CID; optional local SHA-256 of a JSON file.
-- **Viewer** — `getBatchSummary` + timeline; fetch stored JSON/envelope; shows recompute status.
-- **QR Connect** — Generate/scan QR payloads (batchId/CID/saltedHash) for mobile handoff.
+3.  **Configure Environment:**
+    Create a `.env` file (copy from `.env.example`):
+    ```bash
+    cp .env.example .env
+    ```
+    **Required Variables:**
+    ```env
+    VITE_BACKEND_URL=http://localhost:4000/api
+    VITE_CONTRACT_ADDRESS=0x4382a00d63e5ddf23652a70d4bab49279ee2a206  # Your deployed contract
+    VITE_CHAIN_ID=11155111  # 11155111 for Sepolia, 31337 for Localhost
+    ```
 
-## Scripts
-- `npm run dev` — start Vite dev server
-- `npm run build` — type-check + production build
-- `npm run preview` — serve built assets
-
-## Refreshing the ABI
-```bash
-cd ../smart-contracts
-npx hardhat compile
-# copy artifacts/contracts/FoodTraceability.sol/FoodTrace.json -> frontend/src/abi/FoodTrace.json (abi array only)
-```
-`src/abi/foodTrace.ts` re-exports `FoodTrace.json`, so copying keeps the UI synced.
-
-## Notes based on teammate feedback
-- On-chain role display comes from the Sepolia contract; connect MetaMask to fetch it.
-- Email/profile is local-only; permissions are enforced by contract roles/admin backend flows.
-- Firebase is optional/legacy; wallet-first auth is recommended.
+4.  **Run Development Server:**
+    ```bash
+    npm run dev
+    ```
+    Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ## User Manual: Role-Based Workflows
 
 ### 1. Admin (Contract Owner)
 *   **Goal:** Manage the workforce. You decide who is allowed to participate.
-*   **Flow:**
-    1.  Login with **Owner Wallet**.
+*   **Action:**
+    1.  Login with the **Owner Wallet**.
     2.  Go to **Admin** tab.
-    3.  Enter a wallet address.
-    4.  Select a Role (Producer, Transporter, Retailer, Regulator).
-    5.  Click **Grant Role**.
-    *   *Result:* That wallet can now perform actions for that role.
+    3.  Enter a wallet address and select a Role (Producer, Transporter, etc.).
+    4.  Click **Grant Role**.
 
 ### 2. Producer (e.g., Farmer)
-*   **Goal:** Start the supply chain by creating a new batch of food.
-*   **Flow:**
-    1.  Login with **Producer Wallet**.
+*   **Goal:** Start the supply chain by creating a new batch.
+*   **Action:**
+    1.  Login with a **Producer Wallet**.
     2.  Go to **Create Batch** tab.
     3.  Enter details (Product Name, Origin, Temperature).
-    4.  Click **Create Batch**.
-    *   *Result:* A new Batch ID is minted on the blockchain. You are the current custodian.
-    5.  **Handover:** When the truck arrives, go to **Transfer Custody**, enter Batch ID and the **Transporter's address**, and click **Transfer**.
+    4.  Click **Create Batch**. (This mints a new Batch ID on-chain).
+    5.  **Handover:** Go to **Transfer Custody**, enter Batch ID and the **Transporter's address**, and click **Transfer**.
 
 ### 3. Transporter (e.g., Truck Driver)
-*   **Goal:** Move the goods and record conditions (temperature, location).
-*   **Flow:**
-    1.  Login with **Transporter Wallet**.
-    2.  Receive custody (Producer must transfer it to you first).
-    3.  Go to **Append Event** tab.
-    4.  Enter Batch ID. Select Event Type: **Transport**.
-    5.  Enter data (e.g., "Arrived at Distribution Center", Temp: 4°C).
-    6.  Click **Submit Event**.
-    *   *Result:* A permanent record of the journey is added.
-    7.  **Handover:** When delivering to the store, go to **Transfer Custody** and send it to the **Retailer**.
+*   **Goal:** Move the goods and record conditions.
+*   **Action:**
+    1.  Login with a **Transporter Wallet**.
+    2.  Go to **Append Event** tab.
+    3.  Enter Batch ID and select Event Type: **Transport**.
+    4.  Enter data (e.g., "Arrived at DC", Temp: 4°C).
+    5.  Click **Submit Event**.
+    6.  **Handover:** Transfer custody to the **Retailer** when delivered.
 
 ### 4. Retailer (e.g., Supermarket)
-*   **Goal:** Receive goods, stock shelves, and sell to consumers.
-*   **Flow:**
-    1.  Login with **Retailer Wallet**.
-    2.  Receive custody (from Transporter).
-    3.  (Optional) **Append Event**: "Stocked on Shelf".
-    4.  **Sell:** When a customer buys it, you can (optionally) mark the batch as **Sold** (if you implemented `markBatchSold`, otherwise just leave it).
+*   **Goal:** Receive goods and sell to consumers.
+*   **Action:**
+    1.  Login with a **Retailer Wallet**.
+    2.  Accept custody.
+    3.  (Optional) Append "Stocked" event.
+    4.  **Sell:** Mark the batch as **Sold** (if feature enabled) or simply provide the QR code to customers.
 
 ### 5. Regulator (e.g., Food Safety Inspector)
 *   **Goal:** Audit the supply chain and protect the public.
-*   **Flow:**
-    1.  Login with **Regulator Wallet**.
-    2.  Go to **Inspector** tab (or Viewer).
-    3.  Check a Batch ID. Look for red flags (e.g., Temperature > 10°C).
-    4.  **Emergency:** If unsafe, go to **Recall** tab.
-    5.  Enter Batch ID and Reason ("E. coli detected"). Click **Recall**.
-    *   *Result:* The batch is flagged as **RECALLED** globally. The Viewer will show a big warning.
+*   **Action:**
+    1.  Login with a **Regulator Wallet**.
+    2.  Go to **Inspector** tab.
+    3.  Enter a Batch ID to scan for anomalies (e.g., Temperature > 10°C).
+    4.  **Recall:** If unsafe, click **Trigger Recall** (or use the Recall tab) to flag the batch globally.
 
 ### 6. Consumer (Public)
-*   **Goal:** Verify their food is safe and authentic.
-*   **Flow:**
+*   **Goal:** Verify food safety.
+*   **Action:**
     1.  No login required.
     2.  Go to **Viewer** tab (or scan a QR code).
-    3.  Enter Batch ID.
-    4.  **View History:** See the entire timeline: Farm -> Truck -> Store.
-    5.  **Check Safety:** Verify it is **NOT** recalled.
+    3.  Enter Batch ID to see the full "Farm-to-Fork" timeline.
+    4.  **Verify:** Check if the batch is marked as **RECALLED**.
+
+## Advanced Features
+
+### Automated System Test
+*   Located in the **System Test** tab.
+*   **Purpose:** Simulates the entire lifecycle (Create -> Transfer -> Transport -> Recall) in one click.
+*   **Requirement:** Your wallet must have the **Producer** role (use Admin tab to grant it to yourself).
+
+### Verify Hashes
+*   Located in the **Verify Hashes** tab.
+*   **Purpose:** Cryptographically prove that the data shown in the UI matches the immutable hash on the blockchain.
+*   **How:** Enter Batch ID and CID (Content ID). The system re-computes the SHA-256 hash of the off-chain JSON and compares it with the on-chain record.
+
+### QR Connect
+*   Located in the **QR Connect** tab.
+*   **Purpose:** Generate QR codes for physical labels or scan them to load batch data.
+
+## Troubleshooting
+
+### "Signature Mismatch" Error
+*   **Cause:** The Chain ID in your `.env` file does not match the network your wallet is connected to.
+*   **Fix:** Ensure `VITE_CHAIN_ID` in `frontend/.env` matches `CHAIN_ID` in `backend/.env`. (Default: `11155111` for Sepolia).
+
+### "Role Not Allowed" Error
+*   **Cause:** Your wallet address does not have the required role for the action (e.g., trying to Create Batch as a Transporter).
+*   **Fix:** Use the **Admin** tab (with the Owner wallet) to grant the correct role to your address.
