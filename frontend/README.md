@@ -63,3 +63,64 @@ npx hardhat compile
 - On-chain role display comes from the Sepolia contract; connect MetaMask to fetch it.
 - Email/profile is local-only; permissions are enforced by contract roles/admin backend flows.
 - Firebase is optional/legacy; wallet-first auth is recommended.
+
+## User Manual: Role-Based Workflows
+
+### 1. Admin (Contract Owner)
+*   **Goal:** Manage the workforce. You decide who is allowed to participate.
+*   **Flow:**
+    1.  Login with **Owner Wallet**.
+    2.  Go to **Admin** tab.
+    3.  Enter a wallet address.
+    4.  Select a Role (Producer, Transporter, Retailer, Regulator).
+    5.  Click **Grant Role**.
+    *   *Result:* That wallet can now perform actions for that role.
+
+### 2. Producer (e.g., Farmer)
+*   **Goal:** Start the supply chain by creating a new batch of food.
+*   **Flow:**
+    1.  Login with **Producer Wallet**.
+    2.  Go to **Create Batch** tab.
+    3.  Enter details (Product Name, Origin, Temperature).
+    4.  Click **Create Batch**.
+    *   *Result:* A new Batch ID is minted on the blockchain. You are the current custodian.
+    5.  **Handover:** When the truck arrives, go to **Transfer Custody**, enter Batch ID and the **Transporter's address**, and click **Transfer**.
+
+### 3. Transporter (e.g., Truck Driver)
+*   **Goal:** Move the goods and record conditions (temperature, location).
+*   **Flow:**
+    1.  Login with **Transporter Wallet**.
+    2.  Receive custody (Producer must transfer it to you first).
+    3.  Go to **Append Event** tab.
+    4.  Enter Batch ID. Select Event Type: **Transport**.
+    5.  Enter data (e.g., "Arrived at Distribution Center", Temp: 4°C).
+    6.  Click **Submit Event**.
+    *   *Result:* A permanent record of the journey is added.
+    7.  **Handover:** When delivering to the store, go to **Transfer Custody** and send it to the **Retailer**.
+
+### 4. Retailer (e.g., Supermarket)
+*   **Goal:** Receive goods, stock shelves, and sell to consumers.
+*   **Flow:**
+    1.  Login with **Retailer Wallet**.
+    2.  Receive custody (from Transporter).
+    3.  (Optional) **Append Event**: "Stocked on Shelf".
+    4.  **Sell:** When a customer buys it, you can (optionally) mark the batch as **Sold** (if you implemented `markBatchSold`, otherwise just leave it).
+
+### 5. Regulator (e.g., Food Safety Inspector)
+*   **Goal:** Audit the supply chain and protect the public.
+*   **Flow:**
+    1.  Login with **Regulator Wallet**.
+    2.  Go to **Inspector** tab (or Viewer).
+    3.  Check a Batch ID. Look for red flags (e.g., Temperature > 10°C).
+    4.  **Emergency:** If unsafe, go to **Recall** tab.
+    5.  Enter Batch ID and Reason ("E. coli detected"). Click **Recall**.
+    *   *Result:* The batch is flagged as **RECALLED** globally. The Viewer will show a big warning.
+
+### 6. Consumer (Public)
+*   **Goal:** Verify their food is safe and authentic.
+*   **Flow:**
+    1.  No login required.
+    2.  Go to **Viewer** tab (or scan a QR code).
+    3.  Enter Batch ID.
+    4.  **View History:** See the entire timeline: Farm -> Truck -> Store.
+    5.  **Check Safety:** Verify it is **NOT** recalled.
