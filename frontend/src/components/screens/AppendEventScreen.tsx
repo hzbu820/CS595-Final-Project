@@ -87,7 +87,7 @@ export const AppendEventScreen = () => {
       setResult(upload);
 
       setStatus('sending');
-      const tx = await contract.appendEvent(batchId, eventType, upload.cid, upload.saltedHash);
+      const tx = await contract["appendEvent(string,string,string,bytes32)"](batchId, eventType, upload.cid, upload.saltedHash);
       setPendingTx(tx.hash);
       const receipt = await tx.wait();
       setTxHash(receipt.hash);
