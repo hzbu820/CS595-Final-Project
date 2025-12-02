@@ -72,10 +72,7 @@ export const AppLayout = () => {
     return found?.component ?? allowedTabs[0]?.component ?? null;
   }, [activeTab, allowedTabs]);
 
-  const openLoginTab = () => {
-    setActiveTab('login');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+
 
   return (
     <div className="app-layout">
@@ -90,7 +87,7 @@ export const AppLayout = () => {
         </div>
         <div className="panel-stack">
           <WalletPanel />
-          <UserPanel onOpenLogin={openLoginTab} />
+          <UserPanel />
         </div>
       </header>
 

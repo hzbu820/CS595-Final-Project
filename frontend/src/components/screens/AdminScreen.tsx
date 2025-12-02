@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useWallet } from '../../context/walletContext';
-import { ROLE_LABELS } from '../../abi/foodTrace';
+
 
 type RoleValue = 0 | 1 | 2 | 3;
 

@@ -5,7 +5,7 @@ export const RecallScreen = () => {
   const { contract } = useWallet();
   const [batchId, setBatchId] = useState('');
   const [reason, setReason] = useState('');
-  const [recalled, setRecalled] = useState(true);
+
   const [status, setStatus] = useState<'idle' | 'submitting'>('idle');
   const [txHash, setTxHash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +20,7 @@ export const RecallScreen = () => {
     setError(null);
     setTxHash(null);
     try {
-      const tx = await contract.setRecall(batchId, recalled, reason);
+      const tx = await contract.setRecall(batchId, reason);
       const receipt = await tx.wait();
       setTxHash(receipt.hash);
     } catch (err) {
@@ -46,13 +46,8 @@ export const RecallScreen = () => {
         <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3} placeholder="Detected contamination" />
       </label>
 
-      <label className="checkbox-row">
-        <input type="checkbox" checked={recalled} onChange={(e) => setRecalled(e.target.checked)} />
-        Mark as recalled
-      </label>
-
       <button className="primary" type="submit" disabled={status !== 'idle'}>
-        {status === 'submitting' ? 'Submitting...' : 'Update Recall Status'}
+        {status === 'submitting' ? 'Submitting...' : 'Trigger Recall'}
       </button>
 
       {txHash && (
