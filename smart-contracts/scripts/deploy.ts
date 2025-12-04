@@ -18,9 +18,9 @@ async function main() {
   const address = await contract.getAddress();
   const network = await deployer.provider?.getNetwork();
 
-  console.log(FoodTraceability deployed by );
-  console.log(Owner set to );
-  console.log(Contract address: );
+  console.log("FoodTraceability deployed by:", deployer.address);
+  console.log("Owner set to:", owner);
+  console.log("Contract address:", address);
 
   const info: DeploymentInfo = {
     address,
@@ -33,10 +33,10 @@ async function main() {
   await mkdir(deploymentsDir, { recursive: true });
   const outFile = path.join(
     deploymentsDir,
-    FoodTraceability-.json,
+    'FoodTraceability-.json',
   );
   await writeFile(outFile, JSON.stringify(info, null, 2));
-  console.log(Saved deployment metadata to );
+  console.log("Saved deployment metadata to:", outFile);
 }
 
 main().catch((error) => {
