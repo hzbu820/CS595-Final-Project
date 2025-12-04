@@ -8,6 +8,7 @@ contract FoodTraceability is Ownable {
         Producer,
         Transporter,
         Retailer,
+        Inspector,
         Regulator
     }
 
@@ -34,6 +35,7 @@ contract FoodTraceability is Ownable {
     mapping(address => bool) public admins;
     mapping(bytes32 => Batch) private batches;
     mapping(bytes32 => EventRecord[]) private _batchEvents;
+    mapping(bytes32 => ComplianceCheck[]) private compliance;
     uint256 public totalBatches;
 
     event RoleUpdated(address indexed account, Role role);
@@ -53,6 +55,7 @@ contract FoodTraceability is Ownable {
     );
     event CustodyTransferred(string batchId, address indexed from, address indexed to);
     event RecallStatusChanged(string batchId, bool recalled, string reason);
+    event ComplianceVerified(string indexed batchId, string condition, bool passed);
 
     enum BatchState {
         Active,
@@ -61,6 +64,13 @@ contract FoodTraceability is Ownable {
         Closed
     }
     event BatchStateChanged(string batchId, BatchState newState);
+
+    struct ComplianceCheck {
+        string condition;
+        bool passed;
+        address verifier;
+        uint256 timestamp;
+    }
 
     constructor(address owner_) Ownable(owner_) {}
 
@@ -339,5 +349,26 @@ contract FoodTraceability is Ownable {
     modifier onlyAdmin() {
         require(owner() == msg.sender || admins[msg.sender], "admin required");
         _;
+    }
+
+    function submitCompliance(
+        string calldata batchId,
+        string calldata condition,
+        bool passed
+    ) external onlyRole(Role.Inspector) {
+        bytes32 key = _requireBatch(batchId);
+        compliance[key].push(ComplianceCheck({
+            condition: condition,
+            passed: passed,
+            verifier: msg.sender,
+            timestamp: block.timestamp
+        }));
+        emit ComplianceVerified(batchId, condition, passed);
+    }
+
+    function getCompliance(string calldata batchId) 
+        external view returns (ComplianceCheck[] memory) {
+        bytes32 key = _requireBatch(batchId);
+        return compliance[key];
     }
 }
