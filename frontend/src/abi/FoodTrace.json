@@ -1,837 +1,935 @@
-[
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "FoodTraceability",
+  "sourceName": "contracts/FoodTraceability.sol",
+  "abi": [
     {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "owner_",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "nonpayable",
-        "type": "constructor"
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "owner_",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
     },
     {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "owner",
-                "type": "address"
-            }
-        ],
-        "name": "OwnableInvalidOwner",
-        "type": "error"
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnableInvalidOwner",
+      "type": "error"
     },
     {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "account",
-                "type": "address"
-            }
-        ],
-        "name": "OwnableUnauthorizedAccount",
-        "type": "error"
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "OwnableUnauthorizedAccount",
+      "type": "error"
     },
     {
-        "anonymous": false,
-        "inputs": [
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "batchId",
+          "type": "string"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "creator",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "custodian",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "cid",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "dataHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "BatchCreated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "batchId",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "enum FoodTraceability.BatchState",
+          "name": "newState",
+          "type": "uint8"
+        }
+      ],
+      "name": "BatchStateChanged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "string",
+          "name": "batchId",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "condition",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "passed",
+          "type": "bool"
+        }
+      ],
+      "name": "ComplianceVerified",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "batchId",
+          "type": "string"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        }
+      ],
+      "name": "CustodyTransferred",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "batchId",
+          "type": "string"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "actor",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "eventType",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "cid",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "dataHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "EventAppended",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousOwner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "batchId",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "recalled",
+          "type": "bool"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "reason",
+          "type": "string"
+        }
+      ],
+      "name": "RecallStatusChanged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "enum FoodTraceability.Role",
+          "name": "role",
+          "type": "uint8"
+        }
+      ],
+      "name": "RoleUpdated",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newAdmin",
+          "type": "address"
+        }
+      ],
+      "name": "addAdmin",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "admins",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "batchId",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "eventType",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "cid",
+          "type": "string"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "dataHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "appendEvent",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "batchId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint8",
+          "name": "eventType",
+          "type": "uint8"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "eventHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "appendEvent",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "batchId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint256",
+          "name": "index",
+          "type": "uint256"
+        }
+      ],
+      "name": "batchEvents",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "batchId",
+          "type": "string"
+        }
+      ],
+      "name": "closeBatch",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "batchId",
+          "type": "string"
+        },
+        {
+          "internalType": "address",
+          "name": "firstCustodian",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "cid",
+          "type": "string"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "dataHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "createBatch",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        }
+      ],
+      "name": "disableParticipant",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getBatchCount",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "batchId",
+          "type": "string"
+        }
+      ],
+      "name": "getBatchState",
+      "outputs": [
+        {
+          "internalType": "enum FoodTraceability.BatchState",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "batchId",
+          "type": "string"
+        }
+      ],
+      "name": "getBatchSummary",
+      "outputs": [
+        {
+          "components": [
             {
-                "indexed": false,
-                "internalType": "string",
-                "name": "batchId",
-                "type": "string"
+              "internalType": "string",
+              "name": "batchId",
+              "type": "string"
             },
             {
-                "indexed": true,
-                "internalType": "address",
-                "name": "creator",
-                "type": "address"
+              "internalType": "address",
+              "name": "creator",
+              "type": "address"
             },
             {
-                "indexed": true,
-                "internalType": "address",
-                "name": "custodian",
-                "type": "address"
+              "internalType": "address",
+              "name": "currentCustodian",
+              "type": "address"
             },
             {
-                "indexed": false,
-                "internalType": "string",
-                "name": "cid",
-                "type": "string"
+              "internalType": "bool",
+              "name": "exists",
+              "type": "bool"
             },
             {
-                "indexed": false,
-                "internalType": "bytes32",
-                "name": "dataHash",
-                "type": "bytes32"
-            }
-        ],
-        "name": "BatchCreated",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "string",
-                "name": "batchId",
-                "type": "string"
+              "internalType": "string",
+              "name": "recallReason",
+              "type": "string"
             },
             {
-                "indexed": false,
-                "internalType": "enum FoodTraceability.BatchState",
-                "name": "newState",
-                "type": "uint8"
-            }
-        ],
-        "name": "BatchStateChanged",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "string",
-                "name": "batchId",
-                "type": "string"
+              "internalType": "uint256",
+              "name": "createdAt",
+              "type": "uint256"
             },
             {
-                "indexed": true,
-                "internalType": "address",
-                "name": "from",
-                "type": "address"
+              "internalType": "enum FoodTraceability.BatchState",
+              "name": "state",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct FoodTraceability.Batch",
+          "name": "summary",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "eventType",
+              "type": "string"
             },
             {
-                "indexed": true,
-                "internalType": "address",
-                "name": "to",
-                "type": "address"
-            }
-        ],
-        "name": "CustodyTransferred",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "string",
-                "name": "batchId",
-                "type": "string"
+              "internalType": "address",
+              "name": "actor",
+              "type": "address"
             },
             {
-                "indexed": true,
-                "internalType": "address",
-                "name": "actor",
-                "type": "address"
+              "internalType": "string",
+              "name": "cid",
+              "type": "string"
             },
             {
-                "indexed": false,
-                "internalType": "string",
-                "name": "eventType",
-                "type": "string"
+              "internalType": "bytes32",
+              "name": "dataHash",
+              "type": "bytes32"
             },
             {
-                "indexed": false,
-                "internalType": "string",
-                "name": "cid",
-                "type": "string"
+              "internalType": "uint256",
+              "name": "timestamp",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct FoodTraceability.EventRecord[]",
+          "name": "events",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "batchId",
+          "type": "string"
+        }
+      ],
+      "name": "getCompliance",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "condition",
+              "type": "string"
             },
             {
-                "indexed": false,
-                "internalType": "bytes32",
-                "name": "dataHash",
-                "type": "bytes32"
-            }
-        ],
-        "name": "EventAppended",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "previousOwner",
-                "type": "address"
+              "internalType": "bool",
+              "name": "passed",
+              "type": "bool"
             },
             {
-                "indexed": true,
-                "internalType": "address",
-                "name": "newOwner",
-                "type": "address"
-            }
-        ],
-        "name": "OwnershipTransferred",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "string",
-                "name": "batchId",
-                "type": "string"
+              "internalType": "address",
+              "name": "verifier",
+              "type": "address"
             },
             {
-                "indexed": false,
-                "internalType": "bool",
-                "name": "recalled",
-                "type": "bool"
+              "internalType": "uint256",
+              "name": "timestamp",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct FoodTraceability.ComplianceCheck[]",
+          "name": "",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "batchId",
+          "type": "string"
+        }
+      ],
+      "name": "getCurrentCustodian",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "batchId",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "index",
+          "type": "uint256"
+        }
+      ],
+      "name": "getEvent",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "eventType",
+              "type": "string"
             },
             {
-                "indexed": false,
-                "internalType": "string",
-                "name": "reason",
-                "type": "string"
-            }
-        ],
-        "name": "RecallStatusChanged",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "account",
-                "type": "address"
+              "internalType": "address",
+              "name": "actor",
+              "type": "address"
             },
             {
-                "indexed": false,
-                "internalType": "enum FoodTraceability.Role",
-                "name": "role",
-                "type": "uint8"
-            }
-        ],
-        "name": "RoleUpdated",
-        "type": "event"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "newAdmin",
-                "type": "address"
-            }
-        ],
-        "name": "addAdmin",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "name": "admins",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "",
-                "type": "bool"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "string",
-                "name": "batchId",
-                "type": "string"
+              "internalType": "string",
+              "name": "cid",
+              "type": "string"
             },
             {
-                "internalType": "string",
-                "name": "eventType",
-                "type": "string"
+              "internalType": "bytes32",
+              "name": "dataHash",
+              "type": "bytes32"
             },
             {
-                "internalType": "string",
-                "name": "cid",
-                "type": "string"
-            },
-            {
-                "internalType": "bytes32",
-                "name": "dataHash",
-                "type": "bytes32"
+              "internalType": "uint256",
+              "name": "timestamp",
+              "type": "uint256"
             }
-        ],
-        "name": "appendEvent",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
+          ],
+          "internalType": "struct FoodTraceability.EventRecord",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
     },
     {
-        "inputs": [
-            {
-                "internalType": "bytes32",
-                "name": "batchId",
-                "type": "bytes32"
-            },
-            {
-                "internalType": "uint8",
-                "name": "eventType",
-                "type": "uint8"
-            },
-            {
-                "internalType": "bytes32",
-                "name": "eventHash",
-                "type": "bytes32"
-            }
-        ],
-        "name": "appendEvent",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
+      "inputs": [],
+      "name": "getOwner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
     },
     {
-        "inputs": [
-            {
-                "internalType": "bytes32",
-                "name": "batchId",
-                "type": "bytes32"
-            },
-            {
-                "internalType": "uint256",
-                "name": "index",
-                "type": "uint256"
-            }
-        ],
-        "name": "batchEvents",
-        "outputs": [
-            {
-                "internalType": "bytes32",
-                "name": "",
-                "type": "bytes32"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "getRole",
+      "outputs": [
+        {
+          "internalType": "enum FoodTraceability.Role",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
     },
     {
-        "inputs": [
-            {
-                "internalType": "string",
-                "name": "batchId",
-                "type": "string"
-            }
-        ],
-        "name": "closeBatch",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "batchId",
+          "type": "string"
+        }
+      ],
+      "name": "isRecalled",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
     },
     {
-        "inputs": [
-            {
-                "internalType": "string",
-                "name": "batchId",
-                "type": "string"
-            },
-            {
-                "internalType": "address",
-                "name": "firstCustodian",
-                "type": "address"
-            },
-            {
-                "internalType": "string",
-                "name": "cid",
-                "type": "string"
-            },
-            {
-                "internalType": "bytes32",
-                "name": "dataHash",
-                "type": "bytes32"
-            }
-        ],
-        "name": "createBatch",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "batchId",
+          "type": "string"
+        }
+      ],
+      "name": "markBatchSold",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
     },
     {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "user",
-                "type": "address"
-            }
-        ],
-        "name": "disableParticipant",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
     },
     {
-        "inputs": [],
-        "name": "getBatchCount",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "addr",
+          "type": "address"
+        }
+      ],
+      "name": "participants",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "enabled",
+          "type": "bool"
+        },
+        {
+          "internalType": "uint8",
+          "name": "role",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
     },
     {
-        "inputs": [
-            {
-                "internalType": "string",
-                "name": "batchId",
-                "type": "string"
-            }
-        ],
-        "name": "getBatchState",
-        "outputs": [
-            {
-                "internalType": "enum FoodTraceability.BatchState",
-                "name": "",
-                "type": "uint8"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        },
+        {
+          "internalType": "uint8",
+          "name": "role",
+          "type": "uint8"
+        }
+      ],
+      "name": "registerParticipant",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
     },
     {
-        "inputs": [
-            {
-                "internalType": "string",
-                "name": "batchId",
-                "type": "string"
-            }
-        ],
-        "name": "getBatchSummary",
-        "outputs": [
-            {
-                "components": [
-                    {
-                        "internalType": "string",
-                        "name": "batchId",
-                        "type": "string"
-                    },
-                    {
-                        "internalType": "address",
-                        "name": "creator",
-                        "type": "address"
-                    },
-                    {
-                        "internalType": "address",
-                        "name": "currentCustodian",
-                        "type": "address"
-                    },
-                    {
-                        "internalType": "bool",
-                        "name": "exists",
-                        "type": "bool"
-                    },
-                    {
-                        "internalType": "string",
-                        "name": "recallReason",
-                        "type": "string"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "createdAt",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "enum FoodTraceability.BatchState",
-                        "name": "state",
-                        "type": "uint8"
-                    }
-                ],
-                "internalType": "struct FoodTraceability.Batch",
-                "name": "summary",
-                "type": "tuple"
-            },
-            {
-                "components": [
-                    {
-                        "internalType": "string",
-                        "name": "eventType",
-                        "type": "string"
-                    },
-                    {
-                        "internalType": "address",
-                        "name": "actor",
-                        "type": "address"
-                    },
-                    {
-                        "internalType": "string",
-                        "name": "cid",
-                        "type": "string"
-                    },
-                    {
-                        "internalType": "bytes32",
-                        "name": "dataHash",
-                        "type": "bytes32"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "timestamp",
-                        "type": "uint256"
-                    }
-                ],
-                "internalType": "struct FoodTraceability.EventRecord[]",
-                "name": "events",
-                "type": "tuple[]"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "registered",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
     },
     {
-        "inputs": [
-            {
-                "internalType": "string",
-                "name": "batchId",
-                "type": "string"
-            }
-        ],
-        "name": "getCurrentCustodian",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "admin",
+          "type": "address"
+        }
+      ],
+      "name": "removeAdmin",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
     },
     {
-        "inputs": [
-            {
-                "internalType": "string",
-                "name": "batchId",
-                "type": "string"
-            },
-            {
-                "internalType": "uint256",
-                "name": "index",
-                "type": "uint256"
-            }
-        ],
-        "name": "getEvent",
-        "outputs": [
-            {
-                "components": [
-                    {
-                        "internalType": "string",
-                        "name": "eventType",
-                        "type": "string"
-                    },
-                    {
-                        "internalType": "address",
-                        "name": "actor",
-                        "type": "address"
-                    },
-                    {
-                        "internalType": "string",
-                        "name": "cid",
-                        "type": "string"
-                    },
-                    {
-                        "internalType": "bytes32",
-                        "name": "dataHash",
-                        "type": "bytes32"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "timestamp",
-                        "type": "uint256"
-                    }
-                ],
-                "internalType": "struct FoodTraceability.EventRecord",
-                "name": "",
-                "type": "tuple"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
+      "inputs": [],
+      "name": "renounceOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
     },
     {
-        "inputs": [],
-        "name": "getOwner",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "roles",
+      "outputs": [
+        {
+          "internalType": "enum FoodTraceability.Role",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
     },
     {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "account",
-                "type": "address"
-            }
-        ],
-        "name": "getRole",
-        "outputs": [
-            {
-                "internalType": "enum FoodTraceability.Role",
-                "name": "",
-                "type": "uint8"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "batchId",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "reason",
+          "type": "string"
+        }
+      ],
+      "name": "setRecall",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
     },
     {
-        "inputs": [
-            {
-                "internalType": "string",
-                "name": "batchId",
-                "type": "string"
-            }
-        ],
-        "name": "isRecalled",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "",
-                "type": "bool"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "internalType": "enum FoodTraceability.Role",
+          "name": "role",
+          "type": "uint8"
+        }
+      ],
+      "name": "setRole",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
     },
     {
-        "inputs": [
-            {
-                "internalType": "string",
-                "name": "batchId",
-                "type": "string"
-            }
-        ],
-        "name": "markBatchSold",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "batchId",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "condition",
+          "type": "string"
+        },
+        {
+          "internalType": "bool",
+          "name": "passed",
+          "type": "bool"
+        }
+      ],
+      "name": "submitCompliance",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
     },
     {
-        "inputs": [],
-        "name": "owner",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
+      "inputs": [],
+      "name": "totalBatches",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
     },
     {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "addr",
-                "type": "address"
-            }
-        ],
-        "name": "participants",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "enabled",
-                "type": "bool"
-            },
-            {
-                "internalType": "uint8",
-                "name": "role",
-                "type": "uint8"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "batchId",
+          "type": "string"
+        },
+        {
+          "internalType": "address",
+          "name": "newCustodian",
+          "type": "address"
+        }
+      ],
+      "name": "transferCustody",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
     },
     {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "user",
-                "type": "address"
-            },
-            {
-                "internalType": "uint8",
-                "name": "role",
-                "type": "uint8"
-            }
-        ],
-        "name": "registerParticipant",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwner",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
     },
     {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "name": "registered",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "",
-                "type": "bool"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "admin",
-                "type": "address"
-            }
-        ],
-        "name": "removeAdmin",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "renounceOwnership",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "name": "roles",
-        "outputs": [
-            {
-                "internalType": "enum FoodTraceability.Role",
-                "name": "",
-                "type": "uint8"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "string",
-                "name": "batchId",
-                "type": "string"
-            },
-            {
-                "internalType": "string",
-                "name": "reason",
-                "type": "string"
-            }
-        ],
-        "name": "setRecall",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "account",
-                "type": "address"
-            },
-            {
-                "internalType": "enum FoodTraceability.Role",
-                "name": "role",
-                "type": "uint8"
-            }
-        ],
-        "name": "setRole",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "totalBatches",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "string",
-                "name": "batchId",
-                "type": "string"
-            },
-            {
-                "internalType": "address",
-                "name": "newCustodian",
-                "type": "address"
-            }
-        ],
-        "name": "transferCustody",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "newOwner",
-                "type": "address"
-            }
-        ],
-        "name": "transferOwner",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "newOwner",
-                "type": "address"
-            }
-        ],
-        "name": "transferOwnership",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
     }
-]
+  ],
+  "bytecode": "0x60806040523480156200001157600080fd5b5060405162002fa738038062002fa78339810160408190526200003491620000c7565b806001600160a01b0381166200006457604051631e4fbdf760e01b81526000600482015260240160405180910390fd5b6200006f8162000077565b5050620000f9565b600080546001600160a01b038381166001600160a01b0319831681178455604051919092169283917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09190a35050565b600060208284031215620000da57600080fd5b81516001600160a01b0381168114620000f257600080fd5b9392505050565b612e9e80620001096000396000f3fe608060405234801561001057600080fd5b50600436106101ef5760003560e01c80636dcd62951161010f57806399374642116100a2578063bb41110311610071578063bb411103146104a7578063bcf337b9146104ba578063c4a8a670146104cd578063f2fde38b146104ed57600080fd5b80639937464214610446578063a8b12f5c14610469578063a8fabfa51461047c578063b2dd5c071461048457600080fd5b8063743078ad116100de578063743078ad146104015780637772c9a114610414578063893d20e8146104355780638da5cb5b1461043557600080fd5b80636dcd6295146103c05780636f5c148e146103d357806370480275146103e6578063715018a6146103f957600080fd5b8063429b62e5116101875780634dc8c7ca116101565780634dc8c7ca1461037e5780634fb2e45d14610391578063571c3e60146103a457806369ff6abb146103b757600080fd5b8063429b62e5146102ee578063442767331461031157806346d07e261461034a578063479a4f071461035d57600080fd5b806310b78e3f116101c357806310b78e3f146102855780631785f53c146102985780631ad74d43146102ab5780631f82b025146102ce57600080fd5b8062cbaf4e146101f457806309e69ede146102095780630e0668c21461023a5780630ec2bbd714610265575b600080fd5b6102076102023660046122cc565b610500565b005b61021c61021736600461232a565b6105ee565b60408051921515835260ff9091166020830152015b60405180910390f35b61024d6102483660046122cc565b610635565b6040516001600160a01b039091168152602001610231565b6102786102733660046122cc565b610667565b604051610231919061238b565b610207610293366004612423565b6107af565b6102076102a636600461232a565b610914565b6102be6102b93660046122cc565b61093d565b6040519015158152602001610231565b6102e16102dc3660046122cc565b61097d565b60405161023191906124f0565b6102be6102fc36600461232a565b60036020526000908152604090205460ff1681565b61033d61031f36600461232a565b6001600160a01b031660009081526001602052604090205460ff1690565b60405161023191906124fe565b6102076103583660046122cc565b6109a7565b61037061036b366004612518565b610b97565b604051908152602001610231565b61020761038c36600461253a565b610c24565b61020761039f36600461232a565b610dac565b6102076103b23660046125c3565b610dc0565b61037060075481565b6102076103ce3660046125fe565b610eaf565b6102076103e136600461266a565b611056565b6102076103f436600461232a565b6112a0565b610207611314565b61020761040f36600461232a565b611328565b6104276104223660046122cc565b61139c565b604051610231929190612779565b6000546001600160a01b031661024d565b61033d61045436600461232a565b60016020526000908152604090205460ff1681565b61020761047736600461282e565b611759565b600754610370565b6102be61049236600461232a565b60026020526000908152604090205460ff1681565b6102076104b5366004612861565b6118a7565b6102076104c83660046128ed565b611b85565b6104e06104db366004612922565b611d76565b604051610231919061296e565b6102076104fb36600461232a565b611f93565b610508611fce565b60006105148383611ffb565b6000818152600460205260408120919250600582015460ff16600381111561053e5761053e6124c6565b146105645760405162461bcd60e51b815260040161055b90612981565b60405180910390fd5b60058101805460ff19166003179055604080518082018252600681526510d313d4d15160d21b602080830191909152825190810190925260008083526105ac9285929161209f565b7f64f383b8ebebed6d8b8c1254a07d678ba19edc58328671d3481847880942f904848460036040516105e0939291906129d4565b60405180910390a150505050565b6001600160a01b0381166000908152600260209081526040808320546001909252822054829160ff9081169116600481111561062c5761062c6124c6565b91509150915091565b6000806106428484611ffb565b6000908152600460205260409020600201546001600160a01b03169150505b92915050565b606060006106758484611ffb565b905060066000828152602001908152602001600020805480602002602001604051908101604052809291908181526020016000905b828210156107a257838290600052602060002090600302016040518060800160405290816000820180546106dd906129f7565b80601f0160208091040260200160405190810160405280929190818152602001828054610709906129f7565b80156107565780601f1061072b57610100808354040283529160200191610756565b820191906000526020600020905b81548152906001019060200180831161073957829003601f168201915b505050918352505060018281015460ff811615156020808501919091526101009091046001600160a01b03166040840152600290930154606090920191909152918352920191016106aa565b5050505091505092915050565b60006107bb8888611ffb565b6000818152600460205260408120919250600582015460ff1660038111156107e5576107e56124c6565b146108025760405162461bcd60e51b815260040161055b90612981565b61080c8133612150565b6108465760405162461bcd60e51b815260206004820152600b60248201526a1b9bdd08185b1b1bddd95960aa1b604482015260640161055b565b6108bc8288888080601f01602080910402602001604051908101604052809392919081815260200183838082843760009201919091525050604080516020601f8c018190048102820181019092528a815292508a915089908190840183828082843760009201919091525089925061209f915050565b336001600160a01b03167f7f34a66ec704bb3d785d7a1b8243fbdacd5f034d3c80f7e66364a46a94372b0f8a8a8a8a8a8a8a6040516109019796959493929190612a31565b60405180910390a2505050505050505050565b61091c611fce565b6001600160a01b03166000908152600360205260409020805460ff19169055565b60008061094a8484611ffb565b9050600260008281526004602052604090206005015460ff166003811115610974576109746124c6565b14949350505050565b60008061098a8484611ffb565b60009081526004602052604090206005015460ff16949350505050565b818160006109b58383611ffb565b6000818152600460205260409020600201549091506001600160a01b03163314610a115760405162461bcd60e51b815260206004820152600d60248201526c3737ba1031bab9ba37b234b0b760991b604482015260640161055b565b6000610a5286868080601f0160208091040260200160405190810160405280939291908181526020018383808284376000920191909152506121ba92505050565b6000818152600460205260408120919250600582015460ff166003811115610a7c57610a7c6124c6565b14610a995760405162461bcd60e51b815260040161055b90612981565b60023360009081526001602052604090205460ff166004811115610abf57610abf6124c6565b14610b0c5760405162461bcd60e51b815260206004820152601b60248201527f6f6e6c792072657461696c65722063616e206d61726b20736f6c640000000000604482015260640161055b565b60058101805460ff19166001179055604080518082018252600481526314d3d31160e21b60208083019190915282519081019092526000808352610b529285929161209f565b7f64f383b8ebebed6d8b8c1254a07d678ba19edc58328671d3481847880942f90487876001604051610b86939291906129d4565b60405180910390a150505050505050565b6000828152600560205260408120548210610bea5760405162461bcd60e51b8152602060048201526013602482015272696e646578206f7574206f6620626f756e647360681b604482015260640161055b565b6000838152600560205260409020805483908110610c0a57610c0a612a82565b906000526020600020906005020160030154905092915050565b6003803360009081526001602052604090205460ff166004811115610c4b57610c4b6124c6565b14610c685760405162461bcd60e51b815260040161055b90612a98565b6000610c748787611ffb565b600081815260066020908152604091829020825160a0601f8a01849004909302810183019093526080830188815293945092829189908990819085018382808284376000920182905250938552505050861515602080840191909152336040840152426060909301929092528354600181018555938152208151919260030201908190610d019082612b26565b5060208201516001820180546040808601516001600160a81b0319909216931515610100600160a81b031916939093176101006001600160a01b039092169190910217905560609092015160029091015551610d609088908890612be6565b60405180910390207f19a50b25cd16020dad3d7860b497aa8ab40637d9a3eda0384e40f36f83df082d868686604051610d9b93929190612bf6565b60405180910390a250505050505050565b610db4611fce565b610dbd81611f93565b50565b33610dd36000546001600160a01b031690565b6001600160a01b03161480610df757503360009081526003602052604090205460ff165b610e135760405162461bcd60e51b815260040161055b90612c1c565b6001600160a01b03821660009081526001602081905260409091208054839260ff1990911690836004811115610e4b57610e4b6124c6565b02179055506001600160a01b03821660008181526002602052604090819020805460ff19166001179055517fc3f8f61911a1537261f77e2703626e158e299a98e341024ecaa26bbd1d884c6490610ea39084906124fe565b60405180910390a25050565b6004803360009081526001602052604090205460ff166004811115610ed657610ed66124c6565b14610ef35760405162461bcd60e51b815260040161055b90612a98565b6000610eff8686611ffb565b6000818152600460205260408120919250600582015460ff166003811115610f2957610f296124c6565b14610f465760405162461bcd60e51b815260040161055b90612981565b83610f855760405162461bcd60e51b815260206004820152600f60248201526e1c99585cdbdb881c995c5d5a5c9959608a1b604482015260640161055b565b60058101805460ff1916600217905560038101610fa3858783612c44565b50610fe28260405180604001604052806008815260200167149150d05313115160c21b815250604051806020016040528060008152506000801b61209f565b7f6a97bcf8476504800a1de0dc062efd0cc50f1f67588f8419c7effd5efc934fd087876001888860405161101a959493929190612d05565b60405180910390a17f64f383b8ebebed6d8b8c1254a07d678ba19edc58328671d3481847880942f90487876002604051610b86939291906129d4565b828260006110648383611ffb565b6000818152600460205260409020600201549091506001600160a01b031633146110c05760405162461bcd60e51b815260206004820152600d60248201526c3737ba1031bab9ba37b234b0b760991b604482015260640161055b565b6001600160a01b03841661110a5760405162461bcd60e51b815260206004820152601160248201527034b73b30b634b21031bab9ba37b234b0b760791b604482015260640161055b565b611113846121c5565b61115f5760405162461bcd60e51b815260206004820152601c60248201527f637573746f6469616e206d75737420626520617574686f72697a656400000000604482015260640161055b565b60006111a087878080601f0160208091040260200160405190810160405280939291908181526020018383808284376000920191909152506121ba92505050565b6000818152600460205260408120919250600582015460ff1660038111156111ca576111ca6124c6565b146111e75760405162461bcd60e51b815260040161055b90612981565b6002810180546001600160a01b038881166001600160a01b031983161790925560408051808201825260088152672a2920a729a322a960c11b602080830191909152825190810190925260008083529390921692611248928692909161209f565b866001600160a01b0316816001600160a01b03167f7fc70ede9a8a9960e2e93000354bb546cc9206bf59f2a62291d8abea2db4a7c58b8b60405161128d929190612d40565b60405180910390a3505050505050505050565b6112a8611fce565b6001600160a01b0381166112f05760405162461bcd60e51b815260206004820152600f60248201526e696e76616c6964206164647265737360881b604482015260640161055b565b6001600160a01b03166000908152600360205260409020805460ff19166001179055565b61131c611fce565b6113266000612233565b565b3361133b6000546001600160a01b031690565b6001600160a01b0316148061135f57503360009081526003602052604090205460ff165b61137b5760405162461bcd60e51b815260040161055b90612c1c565b6001600160a01b03166000908152600260205260409020805460ff19169055565b6113d86040805160e0810182526060808252600060208301819052928201839052808201839052608082015260a081018290529060c082015290565b606060006113e68585611ffb565b60008181526004602052604090819020815160e08101909252805492935091829082908290611414906129f7565b80601f0160208091040260200160405190810160405280929190818152602001828054611440906129f7565b801561148d5780601f106114625761010080835404028352916020019161148d565b820191906000526020600020905b81548152906001019060200180831161147057829003601f168201915b505050918352505060018201546001600160a01b03908116602083015260028301549081166040830152600160a01b900460ff16151560608201526003820180546080909201916114dd906129f7565b80601f0160208091040260200160405190810160405280929190818152602001828054611509906129f7565b80156115565780601f1061152b57610100808354040283529160200191611556565b820191906000526020600020905b81548152906001019060200180831161153957829003601f168201915b505050918352505060048201546020820152600582015460409091019060ff166003811115611587576115876124c6565b6003811115611598576115986124c6565b9052506000838152600560209081526040808320805482518185028101850190935280835294985090939092909184015b8282101561174a57838290600052602060002090600502016040518060a00160405290816000820180546115fc906129f7565b80601f0160208091040260200160405190810160405280929190818152602001828054611628906129f7565b80156116755780601f1061164a57610100808354040283529160200191611675565b820191906000526020600020905b81548152906001019060200180831161165857829003601f168201915b505050918352505060018201546001600160a01b031660208201526002820180546040909201916116a5906129f7565b80601f01602080910402602001604051908101604052809291908181526020018280546116d1906129f7565b801561171e5780601f106116f35761010080835404028352916020019161171e565b820191906000526020600020905b81548152906001019060200180831161170157829003601f168201915b5050505050815260200160038201548152602001600482015481525050815260200190600101906115c9565b50505050925050509250929050565b3361176c6000546001600160a01b031690565b6001600160a01b0316148061179057503360009081526003602052604090205460ff165b6117ac5760405162461bcd60e51b815260040161055b90612c1c565b600460ff821611156117ef5760405162461bcd60e51b815260206004820152600c60248201526b696e76616c696420726f6c6560a01b604482015260640161055b565b8060ff166004811115611804576118046124c6565b6001600160a01b03831660009081526001602081905260409091208054909160ff199091169083600481111561183c5761183c6124c6565b02179055506001600160a01b0382166000818152600260205260409020805460ff191660011790557fc3f8f61911a1537261f77e2703626e158e299a98e341024ecaa26bbd1d884c6460ff8316600481111561189a5761189a6124c6565b604051610ea391906124fe565b6000803360009081526001602052604090205460ff1660048111156118ce576118ce6124c6565b146118eb5760405162461bcd60e51b815260040161055b90612a98565b8561192b5760405162461bcd60e51b815260206004820152601060248201526f18985d18da1259081c995c5d5a5c995960821b604482015260640161055b565b6001600160a01b0385166119765760405162461bcd60e51b815260206004820152601260248201527118dd5cdd1bd91a585b881c995c5d5a5c995960721b604482015260640161055b565b61197f856121c5565b6119cb5760405162461bcd60e51b815260206004820152601c60248201527f637573746f6469616e206d75737420626520617574686f72697a656400000000604482015260640161055b565b6000611a0c88888080601f0160208091040260200160405190810160405280939291908181526020018383808284376000920191909152506121ba92505050565b6000818152600460205260409020600281015491925090600160a01b900460ff1615611a695760405162461bcd60e51b815260206004820152600c60248201526b62617463682065786973747360a01b604482015260640161055b565b80611a75898b83612c44565b50600181810180546001600160a01b031916331790556002820180546001600160a81b0319166001600160a01b038a1617600160a01b17905542600483015560058201805460ff1916905560078054600090611ad2908490612d54565b92505081905550611b3a826040518060400160405280600681526020016543524541544560d01b81525088888080601f0160208091040260200160405190810160405280939291908181526020018383808284376000920191909152508a925061209f915050565b866001600160a01b0316336001600160a01b03167f2129be3292a8823d051a05cad0557657b23bdb4f37a26648141c103b40f2744d8b8b8a8a8a60405161128d959493929190612d75565b600083815260046020526040902060020154600160a01b900460ff16611bdd5760405162461bcd60e51b815260206004820152600d60248201526c6261746368206d697373696e6760981b604482015260640161055b565b600083815260046020526040812090600582015460ff166003811115611c0557611c056124c6565b14611c225760405162461bcd60e51b815260040161055b90612981565b611c2c8133612150565b611c665760405162461bcd60e51b815260206004820152600b60248201526a1b9bdd08185b1b1bddd95960aa1b604482015260640161055b565b60608360ff16600003611c96575060408051808201909152600681526543726561746560d01b6020820152611d16565b8360ff16600103611cc75750604080518082019091526009815268151c985b9cdc1bdc9d60ba1b6020820152611d16565b8360ff16600203611cf65750604080518082019091526007815266125b9cdc1958dd60ca1b6020820152611d16565b506040805180820190915260078152662ab735b737bbb760c91b60208201525b611d318582604051806020016040528060008152508661209f565b60405133907f7f34a66ec704bb3d785d7a1b8243fbdacd5f034d3c80f7e66364a46a94372b0f90611d6790859085908890612daf565b60405180910390a25050505050565b6040805160a081018252606080825260006020830181905292820181905281018290526080810182905290611dab8585611ffb565b6000818152600560205260409020549091508310611e015760405162461bcd60e51b8152602060048201526013602482015272696e646578206f7574206f6620626f756e647360681b604482015260640161055b565b6000818152600560205260409020805484908110611e2157611e21612a82565b90600052602060002090600502016040518060a0016040529081600082018054611e4a906129f7565b80601f0160208091040260200160405190810160405280929190818152602001828054611e76906129f7565b8015611ec35780601f10611e9857610100808354040283529160200191611ec3565b820191906000526020600020905b815481529060010190602001808311611ea657829003601f168201915b505050918352505060018201546001600160a01b03166020820152600282018054604090920191611ef3906129f7565b80601f0160208091040260200160405190810160405280929190818152602001828054611f1f906129f7565b8015611f6c5780601f10611f4157610100808354040283529160200191611f6c565b820191906000526020600020905b815481529060010190602001808311611f4f57829003601f168201915b50505050508152602001600382015481526020016004820154815250509150509392505050565b611f9b611fce565b6001600160a01b038116611fc557604051631e4fbdf760e01b81526000600482015260240161055b565b610dbd81612233565b6000546001600160a01b031633146113265760405163118cdaa760e01b815233600482015260240161055b565b60008061203d84848080601f0160208091040260200160405190810160405280939291908181526020018383808284376000920191909152506121ba92505050565b600081815260046020526040902060020154909150600160a01b900460ff166120985760405162461bcd60e51b815260206004820152600d60248201526c6261746368206d697373696e6760981b604482015260640161055b565b9392505050565b6000848152600560208181526040808420815160a0810183528881523381850152918201879052606082018690524260808301528054600181018255908552919093208351919092029091019081906120f89082612b26565b5060208201516001820180546001600160a01b0319166001600160a01b03909216919091179055604082015160028201906121339082612b26565b506060820151816003015560808201518160040155505050505050565b6001600160a01b03811660009081526001602052604081205460ff166004816004811115612180576121806124c6565b0361218f576001915050610661565b60028401546001600160a01b0384811691161480156121b257506121b2836121c5565b949350505050565b805160209091012090565b6001600160a01b03811660009081526001602052604081205460ff16818160048111156121f4576121f46124c6565b14806122115750600181600481111561220f5761220f6124c6565b145b806120985750600281600481111561222b5761222b6124c6565b149392505050565b600080546001600160a01b038381166001600160a01b0319831681178455604051919092169283917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09190a35050565b60008083601f84011261229557600080fd5b50813567ffffffffffffffff8111156122ad57600080fd5b6020830191508360208285010111156122c557600080fd5b9250929050565b600080602083850312156122df57600080fd5b823567ffffffffffffffff8111156122f657600080fd5b61230285828601612283565b90969095509350505050565b80356001600160a01b038116811461232557600080fd5b919050565b60006020828403121561233c57600080fd5b6120988261230e565b6000815180845260005b8181101561236b5760208185018101518683018201520161234f565b506000602082860101526020601f19601f83011685010191505092915050565b600060208083018184528085518083526040925060408601915060408160051b87010184880160005b8381101561241557603f198984030185528151608081518186526123da82870182612345565b838b01511515878c0152898401516001600160a01b03168a8801526060938401519390960192909252505093860193908601906001016123b4565b509098975050505050505050565b60008060008060008060006080888a03121561243e57600080fd5b873567ffffffffffffffff8082111561245657600080fd5b6124628b838c01612283565b909950975060208a013591508082111561247b57600080fd5b6124878b838c01612283565b909750955060408a01359150808211156124a057600080fd5b506124ad8a828b01612283565b989b979a50959894979596606090950135949350505050565b634e487b7160e01b600052602160045260246000fd5b600481106124ec576124ec6124c6565b9052565b6020810161066182846124dc565b6020810160058310612512576125126124c6565b91905290565b6000806040838503121561252b57600080fd5b50508035926020909101359150565b60008060008060006060868803121561255257600080fd5b853567ffffffffffffffff8082111561256a57600080fd5b61257689838a01612283565b9097509550602088013591508082111561258f57600080fd5b5061259c88828901612283565b909450925050604086013580151581146125b557600080fd5b809150509295509295909350565b600080604083850312156125d657600080fd5b6125df8361230e565b91506020830135600581106125f357600080fd5b809150509250929050565b6000806000806040858703121561261457600080fd5b843567ffffffffffffffff8082111561262c57600080fd5b61263888838901612283565b9096509450602087013591508082111561265157600080fd5b5061265e87828801612283565b95989497509550505050565b60008060006040848603121561267f57600080fd5b833567ffffffffffffffff81111561269657600080fd5b6126a286828701612283565b90945092506126b590506020850161230e565b90509250925092565b6000815160a084526126d360a0850182612345565b905060018060a01b036020840151166020850152604083015184820360408601526126fe8282612345565b91505060608301516060850152608083015160808501528091505092915050565b60008282518085526020808601955060208260051b8401016020860160005b8481101561276c57601f1986840301895261275a8383516126be565b9884019892509083019060010161273e565b5090979650505050505050565b604081526000835160e06040840152612796610120840182612345565b9050602085015160018060a01b03808216606086015280604088015116608086015250506060850151151560a08401526080850151603f198483030160c08501526127e18282612345565b91505060a085015160e084015260c08501516128016101008501826124dc565b508281036020840152612814818561271f565b95945050505050565b803560ff8116811461232557600080fd5b6000806040838503121561284157600080fd5b61284a8361230e565b91506128586020840161281d565b90509250929050565b6000806000806000806080878903121561287a57600080fd5b863567ffffffffffffffff8082111561289257600080fd5b61289e8a838b01612283565b90985096508691506128b260208a0161230e565b955060408901359150808211156128c857600080fd5b506128d589828a01612283565b979a9699509497949695606090950135949350505050565b60008060006060848603121561290257600080fd5b833592506129126020850161281d565b9150604084013590509250925092565b60008060006040848603121561293757600080fd5b833567ffffffffffffffff81111561294e57600080fd5b61295a86828701612283565b909790965060209590950135949350505050565b60208152600061209860208301846126be565b60208082526010908201526f6261746368206e6f742061637469766560801b604082015260600190565b81835281816020850137506000828201602090810191909152601f909101601f19169091010190565b6040815260006129e86040830185876129ab565b90506121b260208301846124dc565b600181811c90821680612a0b57607f821691505b602082108103612a2b57634e487b7160e01b600052602260045260246000fd5b50919050565b608081526000612a4560808301898b6129ab565b8281036020840152612a5881888a6129ab565b90508281036040840152612a6d8186886129ab565b91505082606083015298975050505050505050565b634e487b7160e01b600052603260045260246000fd5b6020808252600d908201526c1c9bdb19481c995c5d5a5c9959609a1b604082015260600190565b634e487b7160e01b600052604160045260246000fd5b601f821115612b21576000816000526020600020601f850160051c81016020861015612afe5750805b601f850160051c820191505b81811015612b1d57828155600101612b0a565b5050505b505050565b815167ffffffffffffffff811115612b4057612b40612abf565b612b5481612b4e84546129f7565b84612ad5565b602080601f831160018114612b895760008415612b715750858301515b600019600386901b1c1916600185901b178555612b1d565b600085815260208120601f198616915b82811015612bb857888601518255948401946001909101908401612b99565b5085821015612bd65787850151600019600388901b60f8161c191681555b5050505050600190811b01905550565b8183823760009101908152919050565b604081526000612c0a6040830185876129ab565b90508215156020830152949350505050565b6020808252600e908201526d18591b5a5b881c995c5d5a5c995960921b604082015260600190565b67ffffffffffffffff831115612c5c57612c5c612abf565b612c7083612c6a83546129f7565b83612ad5565b6000601f841160018114612ca45760008515612c8c5750838201355b600019600387901b1c1916600186901b178355612cfe565b600083815260209020601f19861690835b82811015612cd55786850135825560209485019460019092019101612cb5565b5086821015612cf25760001960f88860031b161c19848701351681555b505060018560011b0183555b5050505050565b606081526000612d196060830187896129ab565b85151560208401528281036040840152612d348185876129ab565b98975050505050505050565b6020815260006121b26020830184866129ab565b8082018082111561066157634e487b7160e01b600052601160045260246000fd5b606081526000612d896060830187896129ab565b8281036020840152612d9c8186886129ab565b9150508260408301529695505050505050565b608081526000808554612dc1816129f7565b80608086015260a0600180841660008114612de35760018114612dff57612e31565b60ff19851660a089015260a084151560051b8901019550612e31565b8a60005260208060002060005b86811015612e275781548b8201870152908401908201612e0c565b8a0160a001975050505b50505050508281036020840152612e488186612345565b83810360408501526000815260609093019390935250602001939250505056fea264697066735822122025a3bec9f17a88c98bf2b0d7b49e0ce481a3a80cda1e43e526baf7c50790248e64736f6c63430008180033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b50600436106101ef5760003560e01c80636dcd62951161010f57806399374642116100a2578063bb41110311610071578063bb411103146104a7578063bcf337b9146104ba578063c4a8a670146104cd578063f2fde38b146104ed57600080fd5b80639937464214610446578063a8b12f5c14610469578063a8fabfa51461047c578063b2dd5c071461048457600080fd5b8063743078ad116100de578063743078ad146104015780637772c9a114610414578063893d20e8146104355780638da5cb5b1461043557600080fd5b80636dcd6295146103c05780636f5c148e146103d357806370480275146103e6578063715018a6146103f957600080fd5b8063429b62e5116101875780634dc8c7ca116101565780634dc8c7ca1461037e5780634fb2e45d14610391578063571c3e60146103a457806369ff6abb146103b757600080fd5b8063429b62e5146102ee578063442767331461031157806346d07e261461034a578063479a4f071461035d57600080fd5b806310b78e3f116101c357806310b78e3f146102855780631785f53c146102985780631ad74d43146102ab5780631f82b025146102ce57600080fd5b8062cbaf4e146101f457806309e69ede146102095780630e0668c21461023a5780630ec2bbd714610265575b600080fd5b6102076102023660046122cc565b610500565b005b61021c61021736600461232a565b6105ee565b60408051921515835260ff9091166020830152015b60405180910390f35b61024d6102483660046122cc565b610635565b6040516001600160a01b039091168152602001610231565b6102786102733660046122cc565b610667565b604051610231919061238b565b610207610293366004612423565b6107af565b6102076102a636600461232a565b610914565b6102be6102b93660046122cc565b61093d565b6040519015158152602001610231565b6102e16102dc3660046122cc565b61097d565b60405161023191906124f0565b6102be6102fc36600461232a565b60036020526000908152604090205460ff1681565b61033d61031f36600461232a565b6001600160a01b031660009081526001602052604090205460ff1690565b60405161023191906124fe565b6102076103583660046122cc565b6109a7565b61037061036b366004612518565b610b97565b604051908152602001610231565b61020761038c36600461253a565b610c24565b61020761039f36600461232a565b610dac565b6102076103b23660046125c3565b610dc0565b61037060075481565b6102076103ce3660046125fe565b610eaf565b6102076103e136600461266a565b611056565b6102076103f436600461232a565b6112a0565b610207611314565b61020761040f36600461232a565b611328565b6104276104223660046122cc565b61139c565b604051610231929190612779565b6000546001600160a01b031661024d565b61033d61045436600461232a565b60016020526000908152604090205460ff1681565b61020761047736600461282e565b611759565b600754610370565b6102be61049236600461232a565b60026020526000908152604090205460ff1681565b6102076104b5366004612861565b6118a7565b6102076104c83660046128ed565b611b85565b6104e06104db366004612922565b611d76565b604051610231919061296e565b6102076104fb36600461232a565b611f93565b610508611fce565b60006105148383611ffb565b6000818152600460205260408120919250600582015460ff16600381111561053e5761053e6124c6565b146105645760405162461bcd60e51b815260040161055b90612981565b60405180910390fd5b60058101805460ff19166003179055604080518082018252600681526510d313d4d15160d21b602080830191909152825190810190925260008083526105ac9285929161209f565b7f64f383b8ebebed6d8b8c1254a07d678ba19edc58328671d3481847880942f904848460036040516105e0939291906129d4565b60405180910390a150505050565b6001600160a01b0381166000908152600260209081526040808320546001909252822054829160ff9081169116600481111561062c5761062c6124c6565b91509150915091565b6000806106428484611ffb565b6000908152600460205260409020600201546001600160a01b03169150505b92915050565b606060006106758484611ffb565b905060066000828152602001908152602001600020805480602002602001604051908101604052809291908181526020016000905b828210156107a257838290600052602060002090600302016040518060800160405290816000820180546106dd906129f7565b80601f0160208091040260200160405190810160405280929190818152602001828054610709906129f7565b80156107565780601f1061072b57610100808354040283529160200191610756565b820191906000526020600020905b81548152906001019060200180831161073957829003601f168201915b505050918352505060018281015460ff811615156020808501919091526101009091046001600160a01b03166040840152600290930154606090920191909152918352920191016106aa565b5050505091505092915050565b60006107bb8888611ffb565b6000818152600460205260408120919250600582015460ff1660038111156107e5576107e56124c6565b146108025760405162461bcd60e51b815260040161055b90612981565b61080c8133612150565b6108465760405162461bcd60e51b815260206004820152600b60248201526a1b9bdd08185b1b1bddd95960aa1b604482015260640161055b565b6108bc8288888080601f01602080910402602001604051908101604052809392919081815260200183838082843760009201919091525050604080516020601f8c018190048102820181019092528a815292508a915089908190840183828082843760009201919091525089925061209f915050565b336001600160a01b03167f7f34a66ec704bb3d785d7a1b8243fbdacd5f034d3c80f7e66364a46a94372b0f8a8a8a8a8a8a8a6040516109019796959493929190612a31565b60405180910390a2505050505050505050565b61091c611fce565b6001600160a01b03166000908152600360205260409020805460ff19169055565b60008061094a8484611ffb565b9050600260008281526004602052604090206005015460ff166003811115610974576109746124c6565b14949350505050565b60008061098a8484611ffb565b60009081526004602052604090206005015460ff16949350505050565b818160006109b58383611ffb565b6000818152600460205260409020600201549091506001600160a01b03163314610a115760405162461bcd60e51b815260206004820152600d60248201526c3737ba1031bab9ba37b234b0b760991b604482015260640161055b565b6000610a5286868080601f0160208091040260200160405190810160405280939291908181526020018383808284376000920191909152506121ba92505050565b6000818152600460205260408120919250600582015460ff166003811115610a7c57610a7c6124c6565b14610a995760405162461bcd60e51b815260040161055b90612981565b60023360009081526001602052604090205460ff166004811115610abf57610abf6124c6565b14610b0c5760405162461bcd60e51b815260206004820152601b60248201527f6f6e6c792072657461696c65722063616e206d61726b20736f6c640000000000604482015260640161055b565b60058101805460ff19166001179055604080518082018252600481526314d3d31160e21b60208083019190915282519081019092526000808352610b529285929161209f565b7f64f383b8ebebed6d8b8c1254a07d678ba19edc58328671d3481847880942f90487876001604051610b86939291906129d4565b60405180910390a150505050505050565b6000828152600560205260408120548210610bea5760405162461bcd60e51b8152602060048201526013602482015272696e646578206f7574206f6620626f756e647360681b604482015260640161055b565b6000838152600560205260409020805483908110610c0a57610c0a612a82565b906000526020600020906005020160030154905092915050565b6003803360009081526001602052604090205460ff166004811115610c4b57610c4b6124c6565b14610c685760405162461bcd60e51b815260040161055b90612a98565b6000610c748787611ffb565b600081815260066020908152604091829020825160a0601f8a01849004909302810183019093526080830188815293945092829189908990819085018382808284376000920182905250938552505050861515602080840191909152336040840152426060909301929092528354600181018555938152208151919260030201908190610d019082612b26565b5060208201516001820180546040808601516001600160a81b0319909216931515610100600160a81b031916939093176101006001600160a01b039092169190910217905560609092015160029091015551610d609088908890612be6565b60405180910390207f19a50b25cd16020dad3d7860b497aa8ab40637d9a3eda0384e40f36f83df082d868686604051610d9b93929190612bf6565b60405180910390a250505050505050565b610db4611fce565b610dbd81611f93565b50565b33610dd36000546001600160a01b031690565b6001600160a01b03161480610df757503360009081526003602052604090205460ff165b610e135760405162461bcd60e51b815260040161055b90612c1c565b6001600160a01b03821660009081526001602081905260409091208054839260ff1990911690836004811115610e4b57610e4b6124c6565b02179055506001600160a01b03821660008181526002602052604090819020805460ff19166001179055517fc3f8f61911a1537261f77e2703626e158e299a98e341024ecaa26bbd1d884c6490610ea39084906124fe565b60405180910390a25050565b6004803360009081526001602052604090205460ff166004811115610ed657610ed66124c6565b14610ef35760405162461bcd60e51b815260040161055b90612a98565b6000610eff8686611ffb565b6000818152600460205260408120919250600582015460ff166003811115610f2957610f296124c6565b14610f465760405162461bcd60e51b815260040161055b90612981565b83610f855760405162461bcd60e51b815260206004820152600f60248201526e1c99585cdbdb881c995c5d5a5c9959608a1b604482015260640161055b565b60058101805460ff1916600217905560038101610fa3858783612c44565b50610fe28260405180604001604052806008815260200167149150d05313115160c21b815250604051806020016040528060008152506000801b61209f565b7f6a97bcf8476504800a1de0dc062efd0cc50f1f67588f8419c7effd5efc934fd087876001888860405161101a959493929190612d05565b60405180910390a17f64f383b8ebebed6d8b8c1254a07d678ba19edc58328671d3481847880942f90487876002604051610b86939291906129d4565b828260006110648383611ffb565b6000818152600460205260409020600201549091506001600160a01b031633146110c05760405162461bcd60e51b815260206004820152600d60248201526c3737ba1031bab9ba37b234b0b760991b604482015260640161055b565b6001600160a01b03841661110a5760405162461bcd60e51b815260206004820152601160248201527034b73b30b634b21031bab9ba37b234b0b760791b604482015260640161055b565b611113846121c5565b61115f5760405162461bcd60e51b815260206004820152601c60248201527f637573746f6469616e206d75737420626520617574686f72697a656400000000604482015260640161055b565b60006111a087878080601f0160208091040260200160405190810160405280939291908181526020018383808284376000920191909152506121ba92505050565b6000818152600460205260408120919250600582015460ff1660038111156111ca576111ca6124c6565b146111e75760405162461bcd60e51b815260040161055b90612981565b6002810180546001600160a01b038881166001600160a01b031983161790925560408051808201825260088152672a2920a729a322a960c11b602080830191909152825190810190925260008083529390921692611248928692909161209f565b866001600160a01b0316816001600160a01b03167f7fc70ede9a8a9960e2e93000354bb546cc9206bf59f2a62291d8abea2db4a7c58b8b60405161128d929190612d40565b60405180910390a3505050505050505050565b6112a8611fce565b6001600160a01b0381166112f05760405162461bcd60e51b815260206004820152600f60248201526e696e76616c6964206164647265737360881b604482015260640161055b565b6001600160a01b03166000908152600360205260409020805460ff19166001179055565b61131c611fce565b6113266000612233565b565b3361133b6000546001600160a01b031690565b6001600160a01b0316148061135f57503360009081526003602052604090205460ff165b61137b5760405162461bcd60e51b815260040161055b90612c1c565b6001600160a01b03166000908152600260205260409020805460ff19169055565b6113d86040805160e0810182526060808252600060208301819052928201839052808201839052608082015260a081018290529060c082015290565b606060006113e68585611ffb565b60008181526004602052604090819020815160e08101909252805492935091829082908290611414906129f7565b80601f0160208091040260200160405190810160405280929190818152602001828054611440906129f7565b801561148d5780601f106114625761010080835404028352916020019161148d565b820191906000526020600020905b81548152906001019060200180831161147057829003601f168201915b505050918352505060018201546001600160a01b03908116602083015260028301549081166040830152600160a01b900460ff16151560608201526003820180546080909201916114dd906129f7565b80601f0160208091040260200160405190810160405280929190818152602001828054611509906129f7565b80156115565780601f1061152b57610100808354040283529160200191611556565b820191906000526020600020905b81548152906001019060200180831161153957829003601f168201915b505050918352505060048201546020820152600582015460409091019060ff166003811115611587576115876124c6565b6003811115611598576115986124c6565b9052506000838152600560209081526040808320805482518185028101850190935280835294985090939092909184015b8282101561174a57838290600052602060002090600502016040518060a00160405290816000820180546115fc906129f7565b80601f0160208091040260200160405190810160405280929190818152602001828054611628906129f7565b80156116755780601f1061164a57610100808354040283529160200191611675565b820191906000526020600020905b81548152906001019060200180831161165857829003601f168201915b505050918352505060018201546001600160a01b031660208201526002820180546040909201916116a5906129f7565b80601f01602080910402602001604051908101604052809291908181526020018280546116d1906129f7565b801561171e5780601f106116f35761010080835404028352916020019161171e565b820191906000526020600020905b81548152906001019060200180831161170157829003601f168201915b5050505050815260200160038201548152602001600482015481525050815260200190600101906115c9565b50505050925050509250929050565b3361176c6000546001600160a01b031690565b6001600160a01b0316148061179057503360009081526003602052604090205460ff165b6117ac5760405162461bcd60e51b815260040161055b90612c1c565b600460ff821611156117ef5760405162461bcd60e51b815260206004820152600c60248201526b696e76616c696420726f6c6560a01b604482015260640161055b565b8060ff166004811115611804576118046124c6565b6001600160a01b03831660009081526001602081905260409091208054909160ff199091169083600481111561183c5761183c6124c6565b02179055506001600160a01b0382166000818152600260205260409020805460ff191660011790557fc3f8f61911a1537261f77e2703626e158e299a98e341024ecaa26bbd1d884c6460ff8316600481111561189a5761189a6124c6565b604051610ea391906124fe565b6000803360009081526001602052604090205460ff1660048111156118ce576118ce6124c6565b146118eb5760405162461bcd60e51b815260040161055b90612a98565b8561192b5760405162461bcd60e51b815260206004820152601060248201526f18985d18da1259081c995c5d5a5c995960821b604482015260640161055b565b6001600160a01b0385166119765760405162461bcd60e51b815260206004820152601260248201527118dd5cdd1bd91a585b881c995c5d5a5c995960721b604482015260640161055b565b61197f856121c5565b6119cb5760405162461bcd60e51b815260206004820152601c60248201527f637573746f6469616e206d75737420626520617574686f72697a656400000000604482015260640161055b565b6000611a0c88888080601f0160208091040260200160405190810160405280939291908181526020018383808284376000920191909152506121ba92505050565b6000818152600460205260409020600281015491925090600160a01b900460ff1615611a695760405162461bcd60e51b815260206004820152600c60248201526b62617463682065786973747360a01b604482015260640161055b565b80611a75898b83612c44565b50600181810180546001600160a01b031916331790556002820180546001600160a81b0319166001600160a01b038a1617600160a01b17905542600483015560058201805460ff1916905560078054600090611ad2908490612d54565b92505081905550611b3a826040518060400160405280600681526020016543524541544560d01b81525088888080601f0160208091040260200160405190810160405280939291908181526020018383808284376000920191909152508a925061209f915050565b866001600160a01b0316336001600160a01b03167f2129be3292a8823d051a05cad0557657b23bdb4f37a26648141c103b40f2744d8b8b8a8a8a60405161128d959493929190612d75565b600083815260046020526040902060020154600160a01b900460ff16611bdd5760405162461bcd60e51b815260206004820152600d60248201526c6261746368206d697373696e6760981b604482015260640161055b565b600083815260046020526040812090600582015460ff166003811115611c0557611c056124c6565b14611c225760405162461bcd60e51b815260040161055b90612981565b611c2c8133612150565b611c665760405162461bcd60e51b815260206004820152600b60248201526a1b9bdd08185b1b1bddd95960aa1b604482015260640161055b565b60608360ff16600003611c96575060408051808201909152600681526543726561746560d01b6020820152611d16565b8360ff16600103611cc75750604080518082019091526009815268151c985b9cdc1bdc9d60ba1b6020820152611d16565b8360ff16600203611cf65750604080518082019091526007815266125b9cdc1958dd60ca1b6020820152611d16565b506040805180820190915260078152662ab735b737bbb760c91b60208201525b611d318582604051806020016040528060008152508661209f565b60405133907f7f34a66ec704bb3d785d7a1b8243fbdacd5f034d3c80f7e66364a46a94372b0f90611d6790859085908890612daf565b60405180910390a25050505050565b6040805160a081018252606080825260006020830181905292820181905281018290526080810182905290611dab8585611ffb565b6000818152600560205260409020549091508310611e015760405162461bcd60e51b8152602060048201526013602482015272696e646578206f7574206f6620626f756e647360681b604482015260640161055b565b6000818152600560205260409020805484908110611e2157611e21612a82565b90600052602060002090600502016040518060a0016040529081600082018054611e4a906129f7565b80601f0160208091040260200160405190810160405280929190818152602001828054611e76906129f7565b8015611ec35780601f10611e9857610100808354040283529160200191611ec3565b820191906000526020600020905b815481529060010190602001808311611ea657829003601f168201915b505050918352505060018201546001600160a01b03166020820152600282018054604090920191611ef3906129f7565b80601f0160208091040260200160405190810160405280929190818152602001828054611f1f906129f7565b8015611f6c5780601f10611f4157610100808354040283529160200191611f6c565b820191906000526020600020905b815481529060010190602001808311611f4f57829003601f168201915b50505050508152602001600382015481526020016004820154815250509150509392505050565b611f9b611fce565b6001600160a01b038116611fc557604051631e4fbdf760e01b81526000600482015260240161055b565b610dbd81612233565b6000546001600160a01b031633146113265760405163118cdaa760e01b815233600482015260240161055b565b60008061203d84848080601f0160208091040260200160405190810160405280939291908181526020018383808284376000920191909152506121ba92505050565b600081815260046020526040902060020154909150600160a01b900460ff166120985760405162461bcd60e51b815260206004820152600d60248201526c6261746368206d697373696e6760981b604482015260640161055b565b9392505050565b6000848152600560208181526040808420815160a0810183528881523381850152918201879052606082018690524260808301528054600181018255908552919093208351919092029091019081906120f89082612b26565b5060208201516001820180546001600160a01b0319166001600160a01b03909216919091179055604082015160028201906121339082612b26565b506060820151816003015560808201518160040155505050505050565b6001600160a01b03811660009081526001602052604081205460ff166004816004811115612180576121806124c6565b0361218f576001915050610661565b60028401546001600160a01b0384811691161480156121b257506121b2836121c5565b949350505050565b805160209091012090565b6001600160a01b03811660009081526001602052604081205460ff16818160048111156121f4576121f46124c6565b14806122115750600181600481111561220f5761220f6124c6565b145b806120985750600281600481111561222b5761222b6124c6565b149392505050565b600080546001600160a01b038381166001600160a01b0319831681178455604051919092169283917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09190a35050565b60008083601f84011261229557600080fd5b50813567ffffffffffffffff8111156122ad57600080fd5b6020830191508360208285010111156122c557600080fd5b9250929050565b600080602083850312156122df57600080fd5b823567ffffffffffffffff8111156122f657600080fd5b61230285828601612283565b90969095509350505050565b80356001600160a01b038116811461232557600080fd5b919050565b60006020828403121561233c57600080fd5b6120988261230e565b6000815180845260005b8181101561236b5760208185018101518683018201520161234f565b506000602082860101526020601f19601f83011685010191505092915050565b600060208083018184528085518083526040925060408601915060408160051b87010184880160005b8381101561241557603f198984030185528151608081518186526123da82870182612345565b838b01511515878c0152898401516001600160a01b03168a8801526060938401519390960192909252505093860193908601906001016123b4565b509098975050505050505050565b60008060008060008060006080888a03121561243e57600080fd5b873567ffffffffffffffff8082111561245657600080fd5b6124628b838c01612283565b909950975060208a013591508082111561247b57600080fd5b6124878b838c01612283565b909750955060408a01359150808211156124a057600080fd5b506124ad8a828b01612283565b989b979a50959894979596606090950135949350505050565b634e487b7160e01b600052602160045260246000fd5b600481106124ec576124ec6124c6565b9052565b6020810161066182846124dc565b6020810160058310612512576125126124c6565b91905290565b6000806040838503121561252b57600080fd5b50508035926020909101359150565b60008060008060006060868803121561255257600080fd5b853567ffffffffffffffff8082111561256a57600080fd5b61257689838a01612283565b9097509550602088013591508082111561258f57600080fd5b5061259c88828901612283565b909450925050604086013580151581146125b557600080fd5b809150509295509295909350565b600080604083850312156125d657600080fd5b6125df8361230e565b91506020830135600581106125f357600080fd5b809150509250929050565b6000806000806040858703121561261457600080fd5b843567ffffffffffffffff8082111561262c57600080fd5b61263888838901612283565b9096509450602087013591508082111561265157600080fd5b5061265e87828801612283565b95989497509550505050565b60008060006040848603121561267f57600080fd5b833567ffffffffffffffff81111561269657600080fd5b6126a286828701612283565b90945092506126b590506020850161230e565b90509250925092565b6000815160a084526126d360a0850182612345565b905060018060a01b036020840151166020850152604083015184820360408601526126fe8282612345565b91505060608301516060850152608083015160808501528091505092915050565b60008282518085526020808601955060208260051b8401016020860160005b8481101561276c57601f1986840301895261275a8383516126be565b9884019892509083019060010161273e565b5090979650505050505050565b604081526000835160e06040840152612796610120840182612345565b9050602085015160018060a01b03808216606086015280604088015116608086015250506060850151151560a08401526080850151603f198483030160c08501526127e18282612345565b91505060a085015160e084015260c08501516128016101008501826124dc565b508281036020840152612814818561271f565b95945050505050565b803560ff8116811461232557600080fd5b6000806040838503121561284157600080fd5b61284a8361230e565b91506128586020840161281d565b90509250929050565b6000806000806000806080878903121561287a57600080fd5b863567ffffffffffffffff8082111561289257600080fd5b61289e8a838b01612283565b90985096508691506128b260208a0161230e565b955060408901359150808211156128c857600080fd5b506128d589828a01612283565b979a9699509497949695606090950135949350505050565b60008060006060848603121561290257600080fd5b833592506129126020850161281d565b9150604084013590509250925092565b60008060006040848603121561293757600080fd5b833567ffffffffffffffff81111561294e57600080fd5b61295a86828701612283565b909790965060209590950135949350505050565b60208152600061209860208301846126be565b60208082526010908201526f6261746368206e6f742061637469766560801b604082015260600190565b81835281816020850137506000828201602090810191909152601f909101601f19169091010190565b6040815260006129e86040830185876129ab565b90506121b260208301846124dc565b600181811c90821680612a0b57607f821691505b602082108103612a2b57634e487b7160e01b600052602260045260246000fd5b50919050565b608081526000612a4560808301898b6129ab565b8281036020840152612a5881888a6129ab565b90508281036040840152612a6d8186886129ab565b91505082606083015298975050505050505050565b634e487b7160e01b600052603260045260246000fd5b6020808252600d908201526c1c9bdb19481c995c5d5a5c9959609a1b604082015260600190565b634e487b7160e01b600052604160045260246000fd5b601f821115612b21576000816000526020600020601f850160051c81016020861015612afe5750805b601f850160051c820191505b81811015612b1d57828155600101612b0a565b5050505b505050565b815167ffffffffffffffff811115612b4057612b40612abf565b612b5481612b4e84546129f7565b84612ad5565b602080601f831160018114612b895760008415612b715750858301515b600019600386901b1c1916600185901b178555612b1d565b600085815260208120601f198616915b82811015612bb857888601518255948401946001909101908401612b99565b5085821015612bd65787850151600019600388901b60f8161c191681555b5050505050600190811b01905550565b8183823760009101908152919050565b604081526000612c0a6040830185876129ab565b90508215156020830152949350505050565b6020808252600e908201526d18591b5a5b881c995c5d5a5c995960921b604082015260600190565b67ffffffffffffffff831115612c5c57612c5c612abf565b612c7083612c6a83546129f7565b83612ad5565b6000601f841160018114612ca45760008515612c8c5750838201355b600019600387901b1c1916600186901b178355612cfe565b600083815260209020601f19861690835b82811015612cd55786850135825560209485019460019092019101612cb5565b5086821015612cf25760001960f88860031b161c19848701351681555b505060018560011b0183555b5050505050565b606081526000612d196060830187896129ab565b85151560208401528281036040840152612d348185876129ab565b98975050505050505050565b6020815260006121b26020830184866129ab565b8082018082111561066157634e487b7160e01b600052601160045260246000fd5b606081526000612d896060830187896129ab565b8281036020840152612d9c8186886129ab565b9150508260408301529695505050505050565b608081526000808554612dc1816129f7565b80608086015260a0600180841660008114612de35760018114612dff57612e31565b60ff19851660a089015260a084151560051b8901019550612e31565b8a60005260208060002060005b86811015612e275781548b8201870152908401908201612e0c565b8a0160a001975050505b50505050508281036020840152612e488186612345565b83810360408501526000815260609093019390935250602001939250505056fea264697066735822122025a3bec9f17a88c98bf2b0d7b49e0ce481a3a80cda1e43e526baf7c50790248e64736f6c63430008180033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

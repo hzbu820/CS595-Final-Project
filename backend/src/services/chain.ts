@@ -72,3 +72,17 @@ export async function getRoleOf(address: `0x${string}`): Promise<number> {
   const value = await (contract as any).roles(address);
   return Number(value);
 }
+
+export async function submitCompliance(
+  batchId: string,
+  condition: string,
+  passed: boolean
+) {
+  const signerContract = getSignerContract();
+  const tx = await signerContract.submitCompliance(batchId, condition, passed);
+  return await tx.wait();
+}
+
+export async function getCompliance(batchId: string) {
+  return await (contract as any).getCompliance(batchId);
+}
