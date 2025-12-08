@@ -1,4 +1,10 @@
-﻿import { BrowserProvider, Contract, JsonRpcSigner } from 'ethers';
+﻿import {
+  BrowserProvider,
+  Contract,
+  JsonRpcSigner,
+  type ContractTransactionResponse,
+  type TransactionReceipt,
+} from 'ethers';
 import { foodTraceAbi } from '../abi/foodTrace';
 
 type EthereumProvider = {
@@ -31,6 +37,44 @@ export const buildFoodTraceContract = (signerOrProvider: BrowserProvider | JsonR
     throw new Error('Contract address missing. Set VITE_CONTRACT_ADDRESS.');
   }
   return new Contract(FOOD_TRACE_ADDRESS, foodTraceAbi, signerOrProvider);
+};
+
+export type TxMetrics = {
+  txHash: string;
+  latencyMs: number;
+  gasUsed?: string;
+};
+
+export type TxWithMetrics = {
+  receipt: TransactionReceipt;
+  metrics: TxMetrics;
+};
+
+export const waitForTxWithMetrics = async (
+  tx: ContractTransactionResponse,
+  label?: string,
+): Promise<TxWithMetrics> => {
+  const startedAt = Date.now();
+  const receipt = await tx.wait();
+  const finishedAt = Date.now();
+
+  const latencyMs = finishedAt - startedAt;
+  const gasUsed = receipt.gasUsed ? receipt.gasUsed.toString() : undefined;
+
+  const prefix = label ? `[tx:${label}]` : '[tx]';
+  console.log(
+    `${prefix} hash=${receipt.hash} latencyMs=${latencyMs}` +
+      (gasUsed ? ` gasUsed=${gasUsed}` : ''),
+  );
+
+  return {
+    receipt,
+    metrics: {
+      txHash: receipt.hash,
+      latencyMs,
+      gasUsed,
+    },
+  };
 };
 
 export const shortAddress = (address?: string, chars = 4) => {
