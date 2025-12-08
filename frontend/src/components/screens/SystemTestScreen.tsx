@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useWallet } from '../../context/walletContext';
 import { signEventPayload } from '../../lib/signing';
 import { createBatchEnvelope, uploadSignedEvent, updateBatchStatus, updateEventStatus } from '../../lib/api';
+import { waitForTxWithMetrics } from '../../lib/ethereum';
 
 type StepStatus = 'pending' | 'running' | 'success' | 'error';
 
@@ -76,8 +77,8 @@ export const SystemTestScreen = () => {
 
             updateStep('create', 'running', 'Sending to blockchain...');
             const createTx = await contract["createBatch(string,address,string,bytes32)"](batchId, account, upload.cid, upload.saltedHash);
-            const createReceipt = await createTx.wait();
-            await updateBatchStatus(batchId, 'confirmed', createReceipt.hash);
+            const { receipt: createReceipt, metrics: createMetrics } = await waitForTxWithMetrics(createTx, 'createBatch');
+            await updateBatchStatus(batchId, 'confirmed', createReceipt.hash, createMetrics);
             updateStep('create', 'success', `Tx: ${createReceipt.hash.slice(0, 12)}...`);
 
             // Step 2: Append Event - reusing AppendEventScreen pattern
@@ -100,14 +101,15 @@ export const SystemTestScreen = () => {
 
             updateStep('append', 'running', 'Appending on-chain...');
             const appendTx = await contract["appendEvent(string,string,string,bytes32)"](batchId, 'Temperature', eventUpload.cid, eventUpload.saltedHash);
-            const appendReceipt = await appendTx.wait();
-            await updateEventStatus(eventUpload.cid, 'confirmed', appendReceipt.hash);
+            const { receipt: appendReceipt, metrics: appendMetrics } = await waitForTxWithMetrics(appendTx, 'appendEvent');
+            await updateEventStatus(eventUpload.cid, 'confirmed', appendReceipt.hash, appendMetrics);
             updateStep('append', 'success', `Event CID: ${eventUpload.cid.slice(0, 12)}...`);
 
             // Step 3: Transfer Custody - reusing TransferCustodyScreen pattern
             updateStep('transfer', 'running', 'Transferring custody...');
             const transferTx = await contract.transferCustody(batchId, account);
-            const transferReceipt = await transferTx.wait();
+            const { receipt: transferReceipt, metrics: transferMetrics } = await waitForTxWithMetrics(transferTx, 'transferCustody');
+            // No backend status update for transfer in this MVP, but we still log metrics
             updateStep('transfer', 'success', `Tx: ${transferReceipt.hash.slice(0, 12)}...`);
 
             // Step 4: Verify Batch - reusing ViewerScreen pattern
