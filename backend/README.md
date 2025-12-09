@@ -268,9 +268,7 @@ Response 200 OK
   "ok": true,
   "txHash": "0x<transaction-hash>",
   "address": "0x1234...",
-  "role": 1,
-  "latencyMs": 12345,
-  "gasUsed": "210000"
+  "role": "Transporter"
 }
 ```
 

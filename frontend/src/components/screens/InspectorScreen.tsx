@@ -124,7 +124,7 @@ export const InspectorScreen = () => {
     setError(null);
     setTxHash(null);
     try {
-      const tx = await contract.setRecall(batchId, recallReason || 'Inspector recall');
+      const tx = await contract.setRecall(batchId, true, recallReason || 'Inspector recall');
       const receipt = await tx.wait();
       setTxHash(receipt.hash);
     } catch (err) {

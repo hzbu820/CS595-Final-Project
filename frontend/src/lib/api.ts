@@ -42,40 +42,20 @@ export const uploadSignedEvent = async (params: {
   return toJson(res);
 };
 
-export const updateEventStatus = async (
-  cid: string,
-  status: 'confirmed' | 'failed',
-  txHash?: string,
-  metrics?: { latencyMs?: number; gasUsed?: string },
-) => {
+export const updateEventStatus = async (cid: string, status: 'confirmed' | 'failed', txHash?: string) => {
   const res = await fetch(`${BACKEND_URL}/events/${cid}/status`, {
     method: 'POST',
     headers: jsonHeaders,
-    body: JSON.stringify({
-      status,
-      txHash,
-      latencyMs: metrics?.latencyMs,
-      gasUsed: metrics?.gasUsed,
-    }),
+    body: JSON.stringify({ status, txHash }),
   });
   return toJson(res);
 };
 
-export const updateBatchStatus = async (
-  batchId: string,
-  status: 'confirmed' | 'failed',
-  txHash?: string,
-  metrics?: { latencyMs?: number; gasUsed?: string },
-) => {
+export const updateBatchStatus = async (batchId: string, status: 'confirmed' | 'failed', txHash?: string) => {
   const res = await fetch(`${BACKEND_URL}/batches/${batchId}/status`, {
     method: 'POST',
     headers: jsonHeaders,
-    body: JSON.stringify({
-      status,
-      txHash,
-      latencyMs: metrics?.latencyMs,
-      gasUsed: metrics?.gasUsed,
-    }),
+    body: JSON.stringify({ status, txHash }),
   });
   return toJson(res);
 };

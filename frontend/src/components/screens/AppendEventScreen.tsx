@@ -3,7 +3,6 @@ import { useWallet } from '../../context/walletContext';
 import { uploadSignedEvent, updateEventStatus } from '../../lib/api';
 import { signEventPayload } from '../../lib/signing';
 import { useAuth } from '../../context/authContext';
-import { waitForTxWithMetrics } from '../../lib/ethereum';
 
 type UploadResponse = {
   batchId: string;
@@ -90,9 +89,9 @@ export const AppendEventScreen = () => {
       setStatus('sending');
       const tx = await contract["appendEvent(string,string,string,bytes32)"](batchId, eventType, upload.cid, upload.saltedHash);
       setPendingTx(tx.hash);
-      const { receipt, metrics } = await waitForTxWithMetrics(tx, 'appendEvent');
+      const receipt = await tx.wait();
       setTxHash(receipt.hash);
-      await updateEventStatus(upload.cid, 'confirmed', receipt.hash, metrics);
+      await updateEventStatus(upload.cid, 'confirmed', receipt.hash);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
