@@ -3,18 +3,18 @@ import * as dotenv from "dotenv";
 
 dotenv.config();
 
-```
-TO RUN DEMO: Start Backend localhost
-cd smart-contracts
-and run: npx ts-node scripts/demo.ts
-```
+// ```
+// TO RUN DEMO: Start Backend localhost -- npm run dev
+// cd smart-contracts
+// and run: npx ts-node scripts/demo.ts
+// ```
 
 const RPC_URL = process.env.SEPOLIA_RPC_URL;
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
 
 const CONTRACT_ADDRESS = "0x65569C9724CFfEeE33dCdc07DBd8b546fD447f86";
 // Change Batch id before running, can't create same batches
-const BATCH_ID = "TEST-004";
+const BATCH_ID = "TEST-006";
 
 const ROLE_PRODUCER = 0;
 const ROLE_INSPECTOR = 3;
@@ -63,7 +63,7 @@ async function main() {
   console.log();
 
   // 3. Check state
-  console.log("[3] Checking batch state, None since haven't been inspected yet...");
+  console.log("[3] Checking batch state...");
   const state = await contract.getBatchState(BATCH_ID);
   console.log("  State =", state.toString(), "(0 = Active)\n");
 
