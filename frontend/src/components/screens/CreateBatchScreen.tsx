@@ -3,7 +3,6 @@ import { createBatchEnvelope, updateBatchStatus } from '../../lib/api';
 import { useWallet } from '../../context/walletContext';
 import { signEventPayload } from '../../lib/signing';
 import { useAuth } from '../../context/authContext';
-import { waitForTxWithMetrics } from '../../lib/ethereum';
 
 type UploadResponse = {
   batchId: string;
@@ -98,9 +97,9 @@ export const CreateBatchScreen = () => {
         upload.saltedHash,
       );
       setPendingTx(tx.hash);
-      const { receipt, metrics } = await waitForTxWithMetrics(tx, 'createBatch');
+      const receipt = await tx.wait();
       setTxHash(receipt.hash);
-      await updateBatchStatus(batchId, 'confirmed', receipt.hash, metrics);
+      await updateBatchStatus(batchId, 'confirmed', receipt.hash);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
