@@ -5,15 +5,11 @@ import { Html5QrcodeScanner } from 'html5-qrcode';
 
 type ScanPayload = {
   batchId?: string;
-  cid?: string;
-  saltedHash?: string;
   note?: string;
 };
 
 export const QrHubScreen = () => {
-  const [batchId, setBatchId] = useState('0xBATCHID...');
-  const [cid, setCid] = useState('');
-  const [saltedHash, setSaltedHash] = useState('');
+  const [batchId, setBatchId] = useState('0x');
   const [scanEnabled, setScanEnabled] = useState(false);
   const [scanResult, setScanResult] = useState<string | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
@@ -23,11 +19,9 @@ export const QrHubScreen = () => {
   const payload: ScanPayload = useMemo(
     () => ({
       batchId,
-      cid,
-      saltedHash,
-      note: 'Share this QR with the mobile app to autofill batch lookups.',
+      note: 'Scan to pre-fill batch summary lookups.',
     }),
-    [batchId, cid, saltedHash],
+    [batchId],
   );
 
   useEffect(() => {
@@ -44,8 +38,6 @@ export const QrHubScreen = () => {
         try {
           const parsed = JSON.parse(text) as ScanPayload;
           if (parsed.batchId) setBatchId(parsed.batchId);
-          if (parsed.cid) setCid(parsed.cid);
-          if (parsed.saltedHash) setSaltedHash(parsed.saltedHash);
         } catch {
           /* ignore plain text */
         }
@@ -64,8 +56,8 @@ export const QrHubScreen = () => {
     <div className="screen-card form">
       <h2>QR Connect</h2>
       <p className="screen-description">
-        Generate a QR payload containing batch info, or scan a QR from the mobile client to autofill batch lookups and
-        event submissions. This is handy for warehouse kiosks or driver check-ins.
+        Generate a QR code for a batch ID, or scan one from another device to autofill batch summary lookups in the
+        Viewer screen. This mimics how a mobile app could jump directly to a specific batch.
       </p>
 
       <div className="qr-grid">
@@ -73,18 +65,10 @@ export const QrHubScreen = () => {
           <h3>Generate</h3>
           <label>
             Batch ID
-            <input value={batchId} onChange={(e) => setBatchId(e.target.value)} placeholder="0x..." />
-          </label>
-          <label>
-            CID (optional)
-            <input value={cid} onChange={(e) => setCid(e.target.value)} placeholder="cid or filename" />
-          </label>
-          <label>
-            Salted Hash (optional)
             <input
-              value={saltedHash}
-              onChange={(e) => setSaltedHash(e.target.value)}
-              placeholder="0x salted hash"
+              value={batchId}
+              onChange={(e) => setBatchId(e.target.value)}
+              placeholder="0x + 64 hex (same as Viewer)"
             />
           </label>
           <div className="qr-preview">

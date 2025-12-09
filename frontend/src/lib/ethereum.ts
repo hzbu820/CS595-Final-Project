@@ -3,7 +3,7 @@
   Contract,
   JsonRpcSigner,
   type ContractTransactionResponse,
-  type TransactionReceipt,
+  type ContractTransactionReceipt,
 } from 'ethers';
 import { foodTraceAbi } from '../abi/foodTrace';
 
@@ -46,7 +46,7 @@ export type TxMetrics = {
 };
 
 export type TxWithMetrics = {
-  receipt: TransactionReceipt;
+  receipt: ContractTransactionReceipt;
   metrics: TxMetrics;
 };
 
@@ -56,6 +56,9 @@ export const waitForTxWithMetrics = async (
 ): Promise<TxWithMetrics> => {
   const startedAt = Date.now();
   const receipt = await tx.wait();
+  if (!receipt) {
+    throw new Error('Transaction was dropped or not mined');
+  }
   const finishedAt = Date.now();
 
   const latencyMs = finishedAt - startedAt;

@@ -30,7 +30,7 @@ interface EventMetadata {
 }
 
 export const ViewerScreen = () => {
-  const { contract } = useWallet();
+  const { contract, role } = useWallet();
   const [batchId, setBatchId] = useState('');
   const [summary, setSummary] = useState<BatchSummary | null>(null);
   const [events, setEvents] = useState<EventRecord[]>([]);
@@ -40,6 +40,8 @@ export const ViewerScreen = () => {
   const [downloadedJson, setDownloadedJson] = useState<string>('');
   const [downloadedMeta, setDownloadedMeta] = useState<EventMetadata | null>(null);
   const [verification, setVerification] = useState<{ ok: boolean; match?: boolean } | null>(null);
+
+  const canViewEnvelope = role === 'Regulator';
 
   const onSearch = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -127,7 +129,7 @@ export const ViewerScreen = () => {
                   <strong>{event.eventType}</strong> by {event.actor} - {formatTimestamp(event.timestamp)}
                 </p>
                 <p>Salted hash (on-chain): {event.dataHash}</p>
-                {event.cid && (
+                {event.cid && canViewEnvelope && (
                   <button type="button" className="ghost-button" onClick={() => handleDownload(event.cid)}>
                     Fetch JSON ({event.cid})
                   </button>
@@ -138,7 +140,7 @@ export const ViewerScreen = () => {
         </div>
       )}
 
-      {downloadedCid && (
+      {downloadedCid && canViewEnvelope && (
         <div className="callout">
           <p>Downloaded CID: {downloadedCid}</p>
           {downloadedMeta && (
