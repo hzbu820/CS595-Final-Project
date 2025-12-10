@@ -250,8 +250,29 @@ router.get("/events/:batchId/:cid", async (req, res, next) => {
 router.post("/participants/register", async (req, res, next) => {
   try {
     const { address, role } = req.body;
+    const startedAt = Date.now();
     const receipt = await registerParticipant(address, role);
-    return res.json({ ok: true, txHash: receipt.transactionHash, address, role });
+    const finishedAt = Date.now();
+
+    const latencyMs = finishedAt - startedAt;
+    const gasUsed =
+      (receipt as any)?.gasUsed != null
+        ? (receipt as any).gasUsed.toString()
+        : null;
+
+    console.log(
+      `[tx] /participants/register hash=${receipt.transactionHash} latencyMs=${latencyMs}` +
+        (gasUsed ? ` gasUsed=${gasUsed}` : "")
+    );
+
+    return res.json({
+      ok: true,
+      txHash: receipt.transactionHash,
+      address,
+      role,
+      latencyMs,
+      gasUsed,
+    });
   } catch (err) { next(err); }
 });
 
