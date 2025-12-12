@@ -2,7 +2,7 @@
 
 The backend provides a secure off-chain service responsible for verifying signed supply-chain events, hashing and salting payloads, and persisting encrypted event envelopes. It prepares data for the FoodTraceability smart contract; dApps submit on-chain transactions from the user’s wallet (MetaMask), then report tx status back to the backend.
 
-It acts as the bridge between the front-end clients (transporters, inspectors, retailers, regulators) and the on-chain traceability ledger.
+It acts as the bridge between the front-end clients (producers, transporters, retailers, regulators) and the on-chain traceability ledger.
 
 
 ## Folder Layout
@@ -449,7 +449,7 @@ The backend uses `ethers.js` to call the following contract functions:
 
 | Function | Solidity Signature | Purpose |
 |----------|--------------------|---------|
-| `registerParticipant(address user, uint8 role)` | `nonpayable` | Admin-only. Registers a participant and assigns a role (Manufacturer, Transporter, Warehouse, Inspector, Retailer). Called by backend endpoint `/api/participants/register`. |
+| `registerParticipant(address user, uint8 role)` | `nonpayable` | Admin-only. Registers a participant and assigns a role (Producer, Transporter, Retailer, Regulator). Called by backend endpoint `/api/participants/register`. |
 | `participants(address addr)` | `view returns (bool enabled, uint8 role)` | Returns whether an address is registered and what role it holds. Backend uses this to validate `signer` during `/api/events/upload`. |
 | `appendEvent(bytes32 batchId, uint8 eventType, bytes32 eventHash)` | `nonpayable` | Records a salted event hash for a batch. Backend calls this immediately after persisting the event envelope off-chain. Role checks are enforced by the contract. |
 | `batchEvents(bytes32 batchId, uint256 index)` | `view returns (bytes32 eventHash)` | Reads an event hash by index. Backend uses this during `/api/events/verify` to confirm correctness of a recomputed salted hash. |

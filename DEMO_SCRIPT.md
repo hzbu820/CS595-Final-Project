@@ -48,7 +48,7 @@
 *   **Action (Wallet A):**
     1.  Switch MetaMask to **Wallet A**.
     2.  (Optional) Grant yourself **Regulator** role via Admin tab if needed.
-    3.  Go to **Inspector**. Load the Batch.
+    3.  Go to **Regulator** tab. Load the Batch.
     4.  Point out the temperature data from the Transporter.
     5.  **Issue Recall:** Reason: `Temperature exceeded safety limits`.
     6.  *Explain:* "The Regulator has emergency powers to flag unsafe products instantly. This updates the blockchain state globally."
