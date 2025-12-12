@@ -95,7 +95,7 @@ This guide provides step-by-step instructions to manually verify every feature o
     *   Click **"Grant Role"** and Confirm.
     *   *Note: You are now a Regulator.*
 3.  Refresh the page. Top-right should say **"Role: Regulator"**.
-4.  Click the **"Inspector"** tab.
+4.  Click the **"Regulator"** tab.
 5.  **Batch ID:** Paste the Batch ID (`APPLE-001`).
 6.  **Click "Load Batch"**.
     *   Review the history. You should see "Create" (by Wallet A) and "Transport" (by Wallet B).
