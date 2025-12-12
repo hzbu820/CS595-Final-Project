@@ -121,6 +121,13 @@ A React + Vite application for tracking food batches from "Farm to Fork" using E
 *   **Cause:** The Chain ID in your `.env` file does not match the network your wallet is connected to.
 *   **Fix:** Ensure `VITE_CHAIN_ID` in `frontend/.env` matches `CHAIN_ID` in `backend/.env`. (Default: `11155111` for Sepolia).
 
+
 ### "Role Not Allowed" Error
 *   **Cause:** Your wallet address does not have the required role for the action (e.g., trying to Create Batch as a Transporter).
 *   **Fix:** Use the **Admin** tab (with the Owner wallet) to grant the correct role to your address.
+
+## Identity & Governance (Prototype Disclaimer)
+
+In our prototype, we do not solve the real‑world identity problem algorithmically. Instead, we rely on a **Root of Trust** model: the smart contract enforces that only the **Admin** can assign roles (Producer, Transporter, Inspector, Regulator).
+
+We assume the Admin follows an off-chain due diligence process to vet these entities before granting them privileges on-chain. In a production environment, we would replace this manual governance by connecting to: **Decentralized Identity (DID) providers, Verifiable Credentials (VCs), or existing GS1/GLN supply chain registries**.

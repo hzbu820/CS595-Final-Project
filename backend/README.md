@@ -464,4 +464,17 @@ Set these environment variables in `.env` (or `docker-compose.yml → environmen
 RPC_URL=https://sepolia.infura.io/v3/
 <YOUR_KEY>
 ORACLE_PK=0x<private-key> # backend's signing wallet
-CONTRACT_ADDRESS=0x<deployed-contract> # FoodTraceability.sol deployed address
+
+## Architecture FAQ
+
+### On-Chain vs. Off-Chain
+**On-Chain (Blockchain)**: Stores authoritative state including Batch ID, Creator, Custodian, Role Assignments, and Salted Hashes of events.
+**Off-Chain (Backend/Firestore)**: Stores the full, rich JSON event envelopes (including the salt). The backend verifies signatures and computes hashes but does not act as the ledger.
+
+### Purpose of Blockchain
+The blockchain serves as the immutable "Rule Book" and "Proof Anchor". It ensures that history cannot be tampered with (as hashes wouldn't match) and provides a shared source of truth independent of the backend operator.
+
+### Identity & Governance
+In our prototype, we do not solve the real‑world identity problem algorithmically. Instead, we rely on a **Root of Trust** model: the smart contract enforces that only the **Admin** can assign roles (Producer, Transporter, Inspector, Regulator).
+
+We assume the Admin follows an off-chain due diligence process to vet these entities before granting them privileges on-chain. In a production environment, we would replace this manual governance by connecting to: **Decentralized Identity (DID) providers, Verifiable Credentials (VCs), or existing GS1/GLN supply chain registries**.
