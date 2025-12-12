@@ -108,7 +108,7 @@ export const SystemTestScreen = () => {
             // Step 3: Transfer Custody - reusing TransferCustodyScreen pattern
             updateStep('transfer', 'running', 'Transferring custody...');
             const transferTx = await contract.transferCustody(batchId, account);
-            const { receipt: transferReceipt, metrics: transferMetrics } = await waitForTxWithMetrics(transferTx, 'transferCustody');
+            const { receipt: transferReceipt } = await waitForTxWithMetrics(transferTx, 'transferCustody');
             // No backend status update for transfer in this MVP, but we still log metrics
             updateStep('transfer', 'success', `Tx: ${transferReceipt.hash.slice(0, 12)}...`);
 

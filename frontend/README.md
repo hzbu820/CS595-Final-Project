@@ -87,9 +87,9 @@ A React + Vite application for tracking food batches from "Farm to Fork" using E
 *   **Goal:** Audit the supply chain and protect the public.
 *   **Action:**
     1.  Login with a **Regulator Wallet**.
-    2.  Go to **Inspector** tab.
-    3.  Enter a Batch ID to scan for anomalies (e.g., Temperature > 10°C).
-    4.  **Recall:** If unsafe, click **Trigger Recall** (or use the Recall tab) to flag the batch globally.
+    2.  Go to **Recall** tab.
+    3.  Enter a Batch ID and a reason for the recall.
+    4.  Click **Trigger Recall** to flag the batch globally.
 
 ### 6. Consumer (Public)
 *   **Goal:** Verify food safety.

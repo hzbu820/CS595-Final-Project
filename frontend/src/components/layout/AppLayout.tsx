@@ -10,7 +10,7 @@ import { ViewerScreen } from '../screens/ViewerScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import { QrHubScreen } from '../screens/QrHubScreen';
 import { UserPanel } from './UserPanel';
-import { InspectorScreen } from '../screens/InspectorScreen';
+
 import { AdminScreen } from '../screens/AdminScreen';
 import { SystemTestScreen } from '../screens/SystemTestScreen';
 import { useAuth, type FrontendRole } from '../../context/authContext';
@@ -32,7 +32,7 @@ const tabs: TabConfig[] = [
   { id: 'append', label: 'Append Event', roles: ['Producer', 'Transporter', 'Retailer', 'Regulator'], component: <AppendEventScreen /> },
   { id: 'transfer', label: 'Transfer Custody', roles: ['Producer', 'Transporter', 'Retailer'], component: <TransferCustodyScreen /> },
   { id: 'recall', label: 'Recall', roles: ['Regulator'], component: <RecallScreen /> },
-  { id: 'inspect', label: 'Inspector', roles: ['Regulator'], component: <InspectorScreen /> },
+
   { id: 'verify', label: 'Verify Hashes', roles: ['Producer', 'Transporter', 'Retailer', 'Regulator', 'Viewer', 'Unregistered'], component: <VerifyScreen /> },
   { id: 'viewer', label: 'Viewer', roles: ['Producer', 'Transporter', 'Retailer', 'Regulator', 'Viewer', 'Unregistered'], component: <ViewerScreen /> },
   { id: 'qr', label: 'QR Connect', roles: ['Producer', 'Transporter', 'Retailer', 'Regulator', 'Viewer', 'Unregistered'], component: <QrHubScreen /> },
